@@ -33,6 +33,7 @@
   "build": {
     "appId": "ai.drakyn.desktop",
     "productName": "Drakyn Desktop",
+    "publish": null,
     "directories": {
       "output": "dist"
     },
