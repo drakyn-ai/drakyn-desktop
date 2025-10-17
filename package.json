@@ -18,7 +18,10 @@
     "desktop",
     "mcp"
   ],
-  "author": "Drakyn AI",
+  "author": {
+    "name": "Drakyn AI",
+    "email": "hello@drakyn.ai"
+  },
   "license": "MIT",
   "devDependencies": {
     "electron": "^28.0.0",
