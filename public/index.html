@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Drakyn Desktop</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="app">
+    <header>
+      <h1>Drakyn Desktop</h1>
+      <p>Local LLM Agent Runner</p>
+    </header>
+
+    <main>
+      <nav class="sidebar">
+        <ul>
+          <li><a href="#" data-page="chat">Chat</a></li>
+          <li><a href="#" data-page="agents">Agents</a></li>
+          <li><a href="#" data-page="models">Models</a></li>
+          <li><a href="#" data-page="settings">Settings</a></li>
+        </ul>
+      </nav>
+
+      <div class="content">
+        <div id="chat-page" class="page active">
+          <h2>Chat with Agent</h2>
+          <div id="chat-messages"></div>
+          <div class="chat-input">
+            <input type="text" id="message-input" placeholder="Type a message...">
+            <button id="send-button">Send</button>
+          </div>
+        </div>
+
+        <div id="agents-page" class="page">
+          <h2>Manage Agents</h2>
+          <p>Agent management coming soon...</p>
+        </div>
+
+        <div id="models-page" class="page">
+          <h2>Model Configuration</h2>
+          <p>Model configuration coming soon...</p>
+        </div>
+
+        <div id="settings-page" class="page">
+          <h2>Settings</h2>
+          <p>Settings coming soon...</p>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
