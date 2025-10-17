@@ -98,6 +98,23 @@ This will:
 
 ## Building
 
+### Automated Builds (Recommended)
+
+Builds for all platforms (macOS, Windows, Linux) are automated using GitHub Actions:
+
+1. **Automatic on Tag Push**: Create a new tag to trigger a release build
+   ```bash
+   git tag v0.2.0
+   git push origin v0.2.0
+   ```
+   This will build for all platforms and create a GitHub release automatically.
+
+2. **Manual Trigger**: Go to GitHub Actions → "Manual Build" → "Run workflow"
+   - Choose which platform(s) to build
+   - Download artifacts when complete
+
+### Local Builds
+
 Build for your current platform:
 ```bash
 npm run build
@@ -105,10 +122,12 @@ npm run build
 
 Or build for specific platforms:
 ```bash
-npm run build:mac    # macOS (DMG, ZIP)
-npm run build:win    # Windows (NSIS installer, portable)
-npm run build:linux  # Linux (AppImage, DEB)
+npm run build:mac    # macOS (DMG, ZIP) - requires macOS
+npm run build:win    # Windows (NSIS installer, portable) - requires Windows
+npm run build:linux  # Linux (AppImage, DEB) - requires Linux
 ```
+
+**Note**: macOS and Windows builds require their respective operating systems unless using GitHub Actions.
 
 ## Features (Roadmap)
 
