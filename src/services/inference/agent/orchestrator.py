@@ -181,8 +181,8 @@ class AgentOrchestrator:
                 )
                 break
 
-        # Return final conversation state
-        return messages
+        # Note: Conversation state is maintained in messages list
+        # Async generators cannot return values, only yield
 
     async def _get_model_response(self, messages: List[Message]) -> str:
         """
