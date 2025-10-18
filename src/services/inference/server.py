@@ -5,15 +5,22 @@ Supports vLLM, SGLang, and other backends via abstraction layer.
 import asyncio
 import logging
 import os
+import json
 from pathlib import Path
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, AsyncGenerator
 import uvicorn
 from vllm import LLM, SamplingParams
 from vllm.outputs import RequestOutput
+
+# Import agent components
+from agent.orchestrator import AgentOrchestrator
+from agent.models import AgentConfig, Message, ToolDefinition
+import httpx
 
 # Load environment variables
 env_path = Path(__file__).parent / '.env'
@@ -182,6 +189,131 @@ async def create_completion(request: CompletionRequest):
     except Exception as e:
         logger.error(f"Completion failed: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Completion failed: {str(e)}")
+
+
+class AgentChatRequest(BaseModel):
+    """Request for agent chat endpoint."""
+    message: str
+    conversation_history: Optional[List[Dict]] = None
+    model: Optional[str] = None  # If not provided, uses current_model
+    stream: bool = True
+
+
+async def get_available_tools() -> List[ToolDefinition]:
+    """
+    Fetch available tools from MCP server.
+
+    Returns:
+        List of ToolDefinition objects
+    """
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get("http://localhost:8001/tools", timeout=5.0)
+            response.raise_for_status()
+            tools_data = response.json()
+
+            return [
+                ToolDefinition(
+                    name=tool["name"],
+                    description=tool["description"],
+                    parameters=tool["parameters"]
+                )
+                for tool in tools_data
+            ]
+    except Exception as e:
+        logger.warning(f"Failed to fetch tools from MCP server: {e}")
+        return []
+
+
+@app.post("/v1/agent/chat")
+async def agent_chat(request: AgentChatRequest):
+    """
+    Agent chat endpoint with tool use and reasoning.
+    Streams agent thinking steps, tool calls, and final answer.
+    """
+    global current_model
+
+    # Determine which model to use
+    model_name = request.model or current_model
+    if not model_name:
+        raise HTTPException(status_code=400, detail="No model specified or loaded")
+
+    # For vLLM models, use vllm/ prefix
+    if model_name in loaded_models:
+        agent_model = f"vllm/{model_name}"
+    else:
+        agent_model = model_name
+
+    try:
+        # Fetch available tools from MCP server
+        tools = await get_available_tools()
+        logger.info(f"Loaded {len(tools)} tools from MCP server")
+
+        # Convert conversation history to Message objects
+        history = []
+        if request.conversation_history:
+            for msg in request.conversation_history:
+                history.append(Message(
+                    role=msg.get("role", "user"),
+                    content=msg.get("content", "")
+                ))
+
+        # Create agent orchestrator
+        agent = AgentOrchestrator(
+            model=agent_model,
+            tools=tools,
+            config=AgentConfig(
+                max_iterations=5,
+                verbose=True
+            )
+        )
+
+        # Stream agent steps
+        async def generate_stream() -> AsyncGenerator[str, None]:
+            """Generate SSE stream of agent steps."""
+            try:
+                async for step in agent.run(request.message, history):
+                    # Convert step to JSON and send as SSE
+                    data = step.to_stream_dict()
+                    yield f"data: {json.dumps(data)}\n\n"
+
+                # Send done signal
+                yield f"data: {json.dumps({'type': 'done'})}\n\n"
+
+            except Exception as e:
+                logger.error(f"Agent execution failed: {str(e)}")
+                error_data = {
+                    "type": "error",
+                    "error": str(e)
+                }
+                yield f"data: {json.dumps(error_data)}\n\n"
+
+        if request.stream:
+            # Return streaming response
+            return StreamingResponse(
+                generate_stream(),
+                media_type="text/event-stream",
+                headers={
+                    "Cache-Control": "no-cache",
+                    "Connection": "keep-alive",
+                    "X-Accel-Buffering": "no"
+                }
+            )
+        else:
+            # Collect all steps and return at once
+            steps = []
+            async for step in agent.run(request.message, history):
+                steps.append(step.to_stream_dict())
+
+            return {
+                "steps": steps,
+                "model": model_name
+            }
+
+    except Exception as e:
+        logger.error(f"Agent chat failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Agent chat failed: {str(e)}")
+
 
 @app.on_event("startup")
 async def startup_event():

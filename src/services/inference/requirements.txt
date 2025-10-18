@@ -3,5 +3,9 @@ uvicorn>=0.27.0
 vllm>=0.3.0
 torch>=2.1.0
 pydantic>=2.5.0
-litellm>=1.0.0
 python-dotenv>=1.0.0
+
+# Agent components
+litellm>=1.0.0
+instructor>=1.0.0
+httpx>=0.24.0

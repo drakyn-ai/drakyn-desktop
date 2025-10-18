@@ -209,8 +209,8 @@ ipcMain.handle('get-setup-status', async () => {
 app.on('ready', () => {
   createWindow();
   startInferenceServer();
-  // MCP server is optional, skip for now
-  // startMCPServer();
+  // Start MCP server for agent tools
+  startMCPServer();
 });
 
 app.on('window-all-closed', () => {

@@ -44,26 +44,79 @@ async function sendMessage() {
   addMessage(message, true);
   messageInput.value = '';
 
+  // Disable input while processing
+  messageInput.disabled = true;
+  sendButton.disabled = true;
+
+  // Create agent message container
+  const agentMessageDiv = document.createElement('div');
+  agentMessageDiv.style.padding = '0.5rem';
+  agentMessageDiv.style.marginBottom = '0.5rem';
+  agentMessageDiv.style.backgroundColor = '#1e1e1e';
+  agentMessageDiv.style.borderRadius = '4px';
+  agentMessageDiv.style.borderLeft = '3px solid #858585';
+  chatMessages.appendChild(agentMessageDiv);
+
   try {
-    const response = await fetch(`${API_BASE_URL}/v1/completions`, {
+    const response = await fetch(`${API_BASE_URL}/v1/agent/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        prompt: message,
-        max_tokens: 512,
-        temperature: 0.7
+        message: message,
+        stream: true
       })
     });
 
-    if (response.ok) {
-      const data = await response.json();
-      addMessage(data.text, false);
-    } else {
-      const error = await response.text();
-      addMessage(`Error: ${error}`, false);
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
+
+    // Read SSE stream
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let finalAnswer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop(); // Keep incomplete line in buffer
+
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          const data = JSON.parse(line.slice(6));
+
+          if (data.type === 'thinking') {
+            agentMessageDiv.innerHTML = `<em style="color: #858585;">Thinking (iteration ${data.iteration + 1})...</em>`;
+          } else if (data.type === 'tool_call') {
+            agentMessageDiv.innerHTML = `<em style="color: #dcdcaa;">Calling tool: ${data.tool_name}</em><br><code style="font-size: 0.85em;">${JSON.stringify(data.tool_args, null, 2)}</code>`;
+          } else if (data.type === 'tool_result') {
+            agentMessageDiv.innerHTML += `<br><em style="color: #4ec9b0;">Tool result received</em>`;
+          } else if (data.type === 'answer') {
+            finalAnswer = data.content;
+            agentMessageDiv.innerHTML = `<strong>Agent:</strong> ${data.content}`;
+          } else if (data.type === 'error') {
+            agentMessageDiv.innerHTML = `<strong style="color: #f48771;">Error:</strong> ${data.error}`;
+          } else if (data.type === 'done') {
+            // Stream complete
+            break;
+          }
+
+          chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+      }
+    }
+
   } catch (error) {
-    addMessage(`Connection error: ${error.message}. Make sure a model is loaded.`, false);
+    agentMessageDiv.innerHTML = `<strong style="color: #f48771;">Connection error:</strong> ${error.message}. Make sure a model is loaded.`;
+  } finally {
+    // Re-enable input
+    messageInput.disabled = false;
+    sendButton.disabled = false;
+    messageInput.focus();
   }
 }
 
