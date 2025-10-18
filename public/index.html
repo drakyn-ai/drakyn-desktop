@@ -25,11 +25,17 @@
 
       <div class="content">
         <div id="chat-page" class="page active">
-          <h2>Chat with Agent</h2>
+          <div class="chat-header">
+            <h2>Chat with Agent</h2>
+            <div class="connection-status">
+              <span id="connection-indicator" class="status-dot"></span>
+              <span id="connection-text">Connecting...</span>
+            </div>
+          </div>
           <div id="chat-messages"></div>
           <div class="chat-input">
-            <input type="text" id="message-input" placeholder="Type a message...">
-            <button id="send-button">Send</button>
+            <input type="text" id="message-input" placeholder="Type a message..." disabled>
+            <button id="send-button" disabled>Send</button>
           </div>
         </div>
 
@@ -40,7 +46,42 @@
 
         <div id="models-page" class="page">
           <h2>Model Configuration</h2>
-          <p>Model configuration coming soon...</p>
+
+          <div class="model-section">
+            <h3>Load a Model</h3>
+            <div class="form-group">
+              <label for="model-path">Model Name or Path:</label>
+              <input type="text" id="model-path" placeholder="e.g., Qwen/Qwen2.5-7B-Instruct" />
+              <small>Enter a HuggingFace model name or local path</small>
+            </div>
+
+            <div class="form-group">
+              <label for="gpu-memory">GPU Memory Utilization (0.0 - 1.0):</label>
+              <input type="number" id="gpu-memory" min="0.1" max="1.0" step="0.1" value="0.9" />
+            </div>
+
+            <div class="form-group">
+              <label for="tensor-parallel">Tensor Parallel Size:</label>
+              <input type="number" id="tensor-parallel" min="1" max="8" value="1" />
+            </div>
+
+            <button id="load-model-btn" class="btn-primary">Load Model</button>
+            <span id="load-status" class="status-message"></span>
+          </div>
+
+          <div class="model-section">
+            <h3>Currently Loaded Models</h3>
+            <div id="loaded-models-list">
+              <p class="loading">Checking server status...</p>
+            </div>
+          </div>
+
+          <div class="model-section">
+            <h3>Server Status</h3>
+            <div id="server-status">
+              <p>Inference Server: <span id="inference-status">Checking...</span></p>
+            </div>
+          </div>
         </div>
 
         <div id="settings-page" class="page">
