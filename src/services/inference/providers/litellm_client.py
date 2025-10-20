@@ -5,7 +5,7 @@ Provides unified interface for vLLM, OpenAI, Anthropic, and others.
 import logging
 from typing import List, Optional, Dict, Any
 from litellm import acompletion
-from ..agent.models import Message, CompletionConfig
+from agent.models import Message, CompletionConfig
 
 logger = logging.getLogger(__name__)
 
@@ -63,6 +63,10 @@ class LiteLLMClient:
             for msg in messages
         ]
 
+        # Log message count and size for debugging
+        total_chars = sum(len(msg.content) for msg in messages)
+        logger.info(f"Sending {len(messages)} messages ({total_chars} chars total)")
+
         # Prepare completion kwargs
         kwargs = {
             "model": config.model,
@@ -79,18 +83,43 @@ class LiteLLMClient:
             kwargs["api_key"] = self.api_key
 
         # Add tools if provided (for function calling)
-        if tools:
+        # NOTE: Many models (especially Ollama) don't support native function calling
+        # We handle tools via system prompt instead
+        if tools and False:  # Disabled for now - using prompt-based tools instead
             kwargs["tools"] = tools
             kwargs["tool_choice"] = "auto"
+            logger.info(f"Sending {len(tools)} tools to LiteLLM")
 
         # Add stop sequences if configured
         if config.stop:
             kwargs["stop"] = config.stop
 
         try:
-            logger.debug(f"Calling LiteLLM with model: {config.model}")
+            logger.info(f"Calling LiteLLM with model: {config.model}, api_base: {self.api_base}")
 
-            response = await acompletion(**kwargs)
+            # Enable LiteLLM debug logging
+            import litellm
+            litellm.set_verbose = True
+
+            # Log first 500 chars of each message for debugging
+            for i, msg in enumerate(formatted_messages):
+                preview = msg['content'][:500] if len(msg['content']) > 500 else msg['content']
+                logger.debug(f"Message {i} ({msg['role']}): {preview}...")
+
+            import time
+            import asyncio
+            start_time = time.time()
+
+            # Add timeout to prevent hanging forever
+            try:
+                response = await asyncio.wait_for(acompletion(**kwargs), timeout=60.0)
+            except asyncio.TimeoutError:
+                logger.error("LiteLLM call timed out after 60 seconds")
+                raise Exception("LLM request timed out after 60 seconds")
+
+            elapsed = time.time() - start_time
+
+            logger.info(f"LiteLLM response received in {elapsed:.2f}s")
 
             # Extract content from response
             if hasattr(response, 'choices') and len(response.choices) > 0:
@@ -136,3 +165,41 @@ class vLLMClient(LiteLLMClient):
             api_base=f"http://localhost:{port}/v1",
             api_key="dummy"  # vLLM doesn't require real API key
         )
+
+
+class OllamaClient(LiteLLMClient):
+    """
+    Convenience wrapper for Ollama server.
+    Pre-configured with Ollama defaults and proper model prefix.
+    """
+
+    def __init__(self, api_base: Optional[str] = None):
+        """
+        Initialize Ollama client.
+
+        Args:
+            api_base: Ollama server URL (default from env or http://localhost:11434)
+        """
+        import os
+        if not api_base:
+            api_base = os.getenv("OPENAI_COMPATIBLE_URL", "http://localhost:11434")
+
+        super().__init__(
+            api_base=api_base,
+            api_key="ollama"  # Ollama doesn't require real API key
+        )
+
+    async def complete(
+        self,
+        messages: List[Message],
+        config: CompletionConfig,
+        tools: Optional[List[Dict[str, Any]]] = None
+    ) -> str:
+        """
+        Get completion from Ollama.
+        Ensures model name has ollama/ prefix for LiteLLM routing.
+        """
+        # Add ollama/ prefix if not already present
+        if not config.model.startswith("ollama/"):
+            config.model = f"ollama/{config.model}"
+        return await super().complete(messages, config, tools)

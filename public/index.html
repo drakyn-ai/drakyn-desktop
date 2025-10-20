@@ -48,24 +48,52 @@
           <h2>Model Configuration</h2>
 
           <div class="model-section">
-            <h3>Load a Model</h3>
-            <div class="form-group">
-              <label for="model-path">Model Name or Path:</label>
-              <input type="text" id="model-path" placeholder="e.g., Qwen/Qwen2.5-7B-Instruct" />
-              <small>Enter a HuggingFace model name or local path</small>
+            <h3 id="model-section-title">Load a Model</h3>
+
+            <div id="model-selector-section">
+              <div class="form-group">
+                <label for="model-dropdown">Select Model:</label>
+                <select id="model-dropdown">
+                  <optgroup label="Popular Models">
+                    <option value="">-- Select a model --</option>
+                    <option value="qwen2.5-coder:3b">qwen2.5-coder:3b (Coding, 3B params)</option>
+                    <option value="qwen2.5-coder:7b">qwen2.5-coder:7b (Coding, 7B params)</option>
+                    <option value="qwen2.5:3b">qwen2.5:3b (General, 3B params)</option>
+                    <option value="qwen2.5:7b">qwen2.5:7b (General, 7B params)</option>
+                    <option value="llama3.2:3b">llama3.2:3b (General, 3B params)</option>
+                    <option value="llama3.1:8b">llama3.1:8b (General, 8B params)</option>
+                    <option value="mistral:7b">mistral:7b (General, 7B params)</option>
+                    <option value="codellama:7b">codellama:7b (Coding, 7B params)</option>
+                    <option value="deepseek-coder:6.7b">deepseek-coder:6.7b (Coding, 6.7B params)</option>
+                  </optgroup>
+                  <optgroup id="available-models-group" label="Available on Ollama" style="display: none;">
+                  </optgroup>
+                </select>
+                <small id="model-help-text">Select from popular models or check available models below</small>
+              </div>
+
+              <div class="form-group">
+                <label for="model-path">Or enter custom model name:</label>
+                <input type="text" id="model-path" placeholder="e.g., custom-model:latest" />
+                <small>For Ollama: model-name:tag, For vLLM: HuggingFace path</small>
+              </div>
+
+              <button id="refresh-models-btn" class="btn-primary" style="margin-right: 0.5rem;">Refresh Available Models</button>
             </div>
 
-            <div class="form-group">
-              <label for="gpu-memory">GPU Memory Utilization (0.0 - 1.0):</label>
-              <input type="number" id="gpu-memory" min="0.1" max="1.0" step="0.1" value="0.9" />
+            <div id="vllm-options-section" style="display: none;">
+              <div class="form-group">
+                <label for="gpu-memory">GPU Memory Utilization (0.0 - 1.0):</label>
+                <input type="number" id="gpu-memory" min="0.1" max="1.0" step="0.1" value="0.9" />
+              </div>
+
+              <div class="form-group">
+                <label for="tensor-parallel">Tensor Parallel Size:</label>
+                <input type="number" id="tensor-parallel" min="1" max="8" value="1" />
+              </div>
             </div>
 
-            <div class="form-group">
-              <label for="tensor-parallel">Tensor Parallel Size:</label>
-              <input type="number" id="tensor-parallel" min="1" max="8" value="1" />
-            </div>
-
-            <button id="load-model-btn" class="btn-primary">Load Model</button>
+            <button id="load-model-btn" class="btn-primary">Set Model</button>
             <span id="load-status" class="status-message"></span>
           </div>
 
@@ -86,7 +114,55 @@
 
         <div id="settings-page" class="page">
           <h2>Settings</h2>
-          <p>Settings coming soon...</p>
+
+          <div class="model-section">
+            <h3>Server Control</h3>
+            <p>Manually start or stop the inference server.</p>
+
+            <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1rem;">
+              <button id="start-server-btn" class="btn-primary">Start Server</button>
+              <button id="stop-server-btn" class="btn-danger-small">Stop Server</button>
+              <span id="server-control-status" class="status-message"></span>
+            </div>
+
+            <div id="server-status-display">
+              <p><strong>Status:</strong> <span id="server-status-text">Checking...</span></p>
+            </div>
+          </div>
+
+          <div class="model-section">
+            <h3>Inference Engine</h3>
+            <p>Configure which inference backend to use for running models.</p>
+
+            <div class="form-group">
+              <label for="engine-select">Engine:</label>
+              <select id="engine-select">
+                <option value="vllm">vLLM (Local GPU)</option>
+                <option value="openai_compatible">OpenAI Compatible Server</option>
+              </select>
+            </div>
+
+            <div id="openai-url-group" class="form-group" style="display: none;">
+              <label for="openai-url">OpenAI-Compatible Server URL:</label>
+              <input type="text" id="openai-url" placeholder="http://localhost:11434" />
+              <small>For Ollama, use: http://localhost:11434</small>
+            </div>
+
+            <button id="save-settings-btn" class="btn-primary">Save Settings</button>
+            <span id="settings-status" class="status-message"></span>
+
+            <p style="margin-top: 1rem; font-size: 0.9em; color: #858585;">
+              <strong>Note:</strong> Settings are saved immediately. Restart the application for changes to take effect.<br>
+              <strong>Architecture:</strong> The Python server provides agent/tool functionality. In openai_compatible mode, it uses an external LLM server (like Ollama) for inference.
+            </p>
+          </div>
+
+          <div class="model-section">
+            <h3>Current Configuration</h3>
+            <div id="current-config">
+              <p>Loading...</p>
+            </div>
+          </div>
         </div>
       </div>
     </main>

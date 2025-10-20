@@ -67,7 +67,7 @@ class CompletionConfig(BaseModel):
     """Configuration for LLM completion calls."""
     model: str = "openai/gpt-4"
     temperature: float = Field(0.7, ge=0.0, le=2.0)
-    max_tokens: int = Field(2048, gt=0)
+    max_tokens: int = Field(512, gt=0)  # Reduced from 2048 to prevent rambling
     top_p: float = Field(0.9, ge=0.0, le=1.0)
     stop: Optional[List[str]] = None
     stream: bool = True

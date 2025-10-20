@@ -4,6 +4,7 @@ Simple, transparent, and easy to modify.
 """
 import json
 import logging
+import time
 from typing import AsyncGenerator, List, Optional, Dict, Any
 import httpx
 from .models import (
@@ -15,6 +16,7 @@ from .models import (
     CompletionConfig
 )
 from .prompts import get_system_prompt_with_tools
+from providers import LiteLLMClient, vLLMClient, OllamaClient
 
 logger = logging.getLogger(__name__)
 
@@ -91,16 +93,27 @@ class AgentOrchestrator:
             yield AgentStep(type="thinking", iteration=iteration)
 
             try:
+                import time
+                start_get_response = time.time()
+                logger.info(f"Starting _get_model_response at {time.strftime('%H:%M:%S')}")
+
                 response_text = await self._get_model_response(messages)
 
+                elapsed_get_response = time.time() - start_get_response
+                logger.info(f"_get_model_response completed in {elapsed_get_response:.2f}s")
+
+                # Always log the full model response for debugging
+                logger.info(f"Model response (iteration {iteration}): {response_text[:500]}...")
+
                 if self.config.verbose:
-                    logger.debug(f"Model response: {response_text[:200]}...")
+                    logger.debug(f"Full model response: {response_text}")
 
                 # Step 2: Try to parse tool call
                 tool_call = self._parse_tool_call(response_text)
 
                 if tool_call:
                     # Model wants to use a tool
+                    logger.info(f"Tool call detected: {tool_call.tool} with args: {tool_call.args}")
                     yield AgentStep(
                         type="tool_call",
                         iteration=iteration,
@@ -155,10 +168,19 @@ class AgentOrchestrator:
                         continue
                 else:
                     # No tool call - this is the final answer
+                    logger.info(f"Direct answer (no tool): {response_text[:200]}...")
+
+                    # Clean up response - remove common formatting artifacts
+                    cleaned_response = response_text.strip()
+                    # Remove role prefixes like "### Assistant:", "Assistant:", etc.
+                    import re
+                    cleaned_response = re.sub(r'^#{0,3}\s*(?:Assistant|User|System):\s*', '', cleaned_response, flags=re.IGNORECASE | re.MULTILINE)
+                    cleaned_response = cleaned_response.strip()
+
                     yield AgentStep(
                         type="answer",
                         iteration=iteration,
-                        content=response_text
+                        content=cleaned_response
                     )
 
                     # Add final message to history
@@ -194,19 +216,26 @@ class AgentOrchestrator:
         Returns:
             Model's text response
         """
-        from ..providers import LiteLLMClient
+        start = time.time()
+        logger.info(f"[TIMING] Entered _get_model_response")
 
         # Initialize client based on model type
-        if self.model.startswith("vllm/") or "localhost" in self.model:
+        if self.model.startswith("vllm/"):
             # Use local vLLM server
-            from ..providers import vLLMClient
             client = vLLMClient()
             # Strip vllm/ prefix for actual model name
             model_name = self.model.replace("vllm/", "")
+        elif self.model.startswith("ollama/"):
+            # Use Ollama server
+            client = OllamaClient()
+            # Strip ollama/ prefix for actual model name
+            model_name = self.model.replace("ollama/", "")
         else:
-            # Use cloud provider (OpenAI, Anthropic, etc.)
+            # Use cloud provider (OpenAI, Anthropic, etc.) or auto-detect
             client = LiteLLMClient()
             model_name = self.model
+
+        logger.info(f"[TIMING] Client initialized in {time.time() - start:.3f}s")
 
         # Update config with actual model name
         config = CompletionConfig(
@@ -217,8 +246,12 @@ class AgentOrchestrator:
             stream=False
         )
 
+        logger.info(f"[TIMING] Config created in {time.time() - start:.3f}s")
+
         # Convert tools to LiteLLM format (optional - for function calling support)
         tools_dict = [tool.to_dict() for tool in self.tools] if self.tools else None
+
+        logger.info(f"[TIMING] Tools prepared in {time.time() - start:.3f}s, calling client.complete()")
 
         # Get completion
         response = await client.complete(
@@ -227,6 +260,7 @@ class AgentOrchestrator:
             tools=tools_dict
         )
 
+        logger.info(f"[TIMING] Total _get_model_response time: {time.time() - start:.3f}s")
         return response
 
     def _parse_tool_call(self, response: str) -> Optional[ToolCall]:
