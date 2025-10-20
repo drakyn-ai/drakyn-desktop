@@ -29,7 +29,7 @@
   },
   "build": {
     "appId": "ai.drakyn.desktop",
-    "productName": "Drakyn Desktop",
+    "productName": "Drakyn",
     "directories": {
       "output": "dist"
     },
