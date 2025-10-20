@@ -10,6 +10,7 @@ import uvicorn
 
 # Import tools
 from tools.files import FileSearchTool
+from tools.gmail import GmailTool
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -28,6 +29,7 @@ app.add_middleware(
 # Tool registry
 AVAILABLE_TOOLS = {
     "search_files": FileSearchTool,
+    "gmail": GmailTool,
 }
 
 
