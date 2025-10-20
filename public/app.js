@@ -385,8 +385,8 @@ async function checkChatConnection() {
 }
 
 // Listen for setup status updates from Electron
-if (typeof require !== 'undefined') {
-  const { ipcRenderer } = require('electron');
+if (typeof window.electron !== 'undefined') {
+  const { ipcRenderer } = window.electron;
 
   ipcRenderer.on('setup-status', (event, status) => {
     console.log('[Setup]:', status);
@@ -410,9 +410,9 @@ async function loadSettings() {
   const currentConfigDiv = document.getElementById('current-config');
 
   // Try to get config from Electron IPC first (works even if server is down)
-  if (typeof require !== 'undefined') {
+  if (typeof window.electron !== 'undefined') {
     try {
-      const { ipcRenderer } = require('electron');
+      const { ipcRenderer } = window.electron;
       const config = await ipcRenderer.invoke('get-config');
 
       engineSelect.value = config.inference_engine;
@@ -482,12 +482,12 @@ async function saveSettings() {
   }
 
   // Update .env file via Electron IPC (works even if server is down)
-  if (typeof require !== 'undefined') {
+  if (typeof window.electron !== 'undefined') {
     try {
       statusEl.textContent = 'Saving settings...';
       statusEl.style.color = '#dcdcaa';
 
-      const { ipcRenderer } = require('electron');
+      const { ipcRenderer } = window.electron;
       const result = await ipcRenderer.invoke('update-config', {
         inference_engine: engine,
         openai_compatible_url: url
@@ -515,9 +515,9 @@ async function saveSettings() {
 async function updateServerStatus() {
   const statusText = document.getElementById('server-status-text');
 
-  if (typeof require !== 'undefined') {
+  if (typeof window.electron !== 'undefined') {
     try {
-      const { ipcRenderer } = require('electron');
+      const { ipcRenderer } = window.electron;
       const status = await ipcRenderer.invoke('get-server-status');
 
       if (status.inference) {
@@ -537,12 +537,12 @@ async function updateServerStatus() {
 async function startServer() {
   const statusEl = document.getElementById('server-control-status');
 
-  if (typeof require !== 'undefined') {
+  if (typeof window.electron !== 'undefined') {
     try {
       statusEl.textContent = 'Starting server...';
       statusEl.style.color = '#dcdcaa';
 
-      const { ipcRenderer } = require('electron');
+      const { ipcRenderer } = window.electron;
       const result = await ipcRenderer.invoke('start-inference-server');
 
       if (result.success) {
@@ -563,12 +563,12 @@ async function startServer() {
 async function stopServer() {
   const statusEl = document.getElementById('server-control-status');
 
-  if (typeof require !== 'undefined') {
+  if (typeof window.electron !== 'undefined') {
     try {
       statusEl.textContent = 'Stopping server...';
       statusEl.style.color = '#dcdcaa';
 
-      const { ipcRenderer } = require('electron');
+      const { ipcRenderer } = window.electron;
       const result = await ipcRenderer.invoke('stop-inference-server');
 
       if (result.success) {

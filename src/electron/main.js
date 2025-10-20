@@ -25,7 +25,7 @@ function createWindow() {
     height: 800,
     webPreferences: {
       nodeIntegration: true,
-      contextIsolation: false,
+      contextIsolation: true,
       preload: path.join(__dirname, 'preload.js')
     }
   });
@@ -33,10 +33,11 @@ function createWindow() {
   // Load the UI
   mainWindow.loadFile(path.join(__dirname, '../../public/index.html'));
 
-  // Open DevTools in development mode
-  if (process.argv.includes('--dev')) {
-    mainWindow.webContents.openDevTools();
-  }
+  // Only open DevTools in development mode with --dev flag
+  // Don't open automatically
+  // if (process.argv.includes('--dev')) {
+  //   mainWindow.webContents.openDevTools();
+  // }
 
   mainWindow.on('closed', () => {
     mainWindow = null;
