@@ -6,8 +6,8 @@
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  background-color: #1e1e1e;
-  color: #d4d4d4;
+  background-color: #ffffff;
+  color: #1a1a1a;
   height: 100vh;
   overflow: hidden;
 }
@@ -19,10 +19,10 @@ body {
 }
 
 header {
-  background-color: #252526;
+  background-color: #f8f9fa;
   padding: 1rem 1.5rem;
-  border-bottom: 1px solid #3e3e42;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  border-bottom: 1px solid #e1e4e8;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 header .header-content {
@@ -36,8 +36,9 @@ header .logo {
   width: 48px;
   object-fit: contain;
   border-radius: 8px;
-  background-color: #1e1e1e;
+  background-color: #ffffff;
   padding: 4px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 header .header-text {
@@ -50,13 +51,13 @@ header h1 {
   font-size: 1.25rem;
   font-weight: 600;
   margin: 0;
-  color: #ffffff;
+  color: #1a1a1a;
   letter-spacing: -0.02em;
 }
 
 header p {
   font-size: 0.8rem;
-  color: #858585;
+  color: #586069;
   margin: 0;
   font-weight: 400;
 }
@@ -69,8 +70,8 @@ main {
 
 .sidebar {
   width: 220px;
-  background-color: #252526;
-  border-right: 1px solid #3e3e42;
+  background-color: #f8f9fa;
+  border-right: 1px solid #e1e4e8;
   padding: 0.5rem 0;
 }
 
@@ -86,11 +87,11 @@ main {
 }
 
 .sidebar li:hover {
-  background-color: #2a2d2e;
+  background-color: #e9ecef;
 }
 
 .sidebar a {
-  color: #d4d4d4;
+  color: #24292e;
   text-decoration: none;
   display: block;
   padding: 0.75rem 1rem;
@@ -101,8 +102,8 @@ main {
 }
 
 .sidebar li:hover a {
-  color: #ffffff;
-  border-left-color: #007acc;
+  color: #0366d6;
+  border-left-color: #0366d6;
   padding-left: 1.125rem;
 }
 
@@ -110,6 +111,7 @@ main {
   flex: 1;
   padding: 2rem;
   overflow-y: auto;
+  background-color: #ffffff;
 }
 
 .page {
@@ -143,16 +145,16 @@ main {
 }
 
 .status-dot.connected {
-  background-color: #4ec9b0;
+  background-color: #28a745;
   animation: none;
 }
 
 .status-dot.warning {
-  background-color: #dcdcaa;
+  background-color: #ffc107;
 }
 
 .status-dot.disconnected {
-  background-color: #f48771;
+  background-color: #dc3545;
 }
 
 @keyframes pulse {
@@ -169,10 +171,10 @@ main {
   overflow-y: auto;
   margin-bottom: 1rem;
   padding: 1.5rem;
-  background-color: #1a1a1a;
-  border: 1px solid #3e3e42;
+  background-color: #f8f9fa;
+  border: 1px solid #e1e4e8;
   border-radius: 8px;
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .chat-input {
@@ -183,23 +185,23 @@ main {
 #message-input {
   flex: 1;
   padding: 0.875rem 1rem;
-  background-color: #252526;
-  border: 1px solid #3e3e42;
+  background-color: #ffffff;
+  border: 1px solid #d1d5da;
   border-radius: 8px;
-  color: #d4d4d4;
+  color: #24292e;
   font-size: 0.95rem;
   transition: all 0.2s ease;
 }
 
 #message-input:focus {
   outline: none;
-  border-color: #007acc;
-  box-shadow: 0 0 0 3px rgba(0, 122, 204, 0.1);
+  border-color: #0366d6;
+  box-shadow: 0 0 0 3px rgba(3, 102, 214, 0.1);
 }
 
 #send-button {
   padding: 0.875rem 1.75rem;
-  background-color: #007acc;
+  background-color: #0366d6;
   color: white;
   border: none;
   border-radius: 8px;
@@ -207,18 +209,18 @@ main {
   font-size: 0.95rem;
   font-weight: 500;
   transition: all 0.2s ease;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 #send-button:hover {
-  background-color: #005a9e;
-  box-shadow: 0 2px 6px rgba(0, 122, 204, 0.3);
+  background-color: #0256c7;
+  box-shadow: 0 2px 6px rgba(3, 102, 214, 0.3);
   transform: translateY(-1px);
 }
 
 #send-button:active {
   transform: translateY(0);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 #send-button:disabled {
@@ -230,22 +232,22 @@ main {
 
 h2 {
   margin-bottom: 1rem;
-  color: #ffffff;
+  color: #1a1a1a;
 }
 
 h3 {
   margin-bottom: 0.75rem;
-  color: #d4d4d4;
+  color: #24292e;
   font-size: 1.1rem;
 }
 
 .model-section {
-  background-color: #252526;
+  background-color: #f8f9fa;
   padding: 1.5rem;
   margin-bottom: 1.5rem;
   border-radius: 8px;
-  border: 1px solid #3e3e42;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  border: 1px solid #e1e4e8;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .form-group {
@@ -255,18 +257,19 @@ h3 {
 .form-group label {
   display: block;
   margin-bottom: 0.5rem;
-  color: #d4d4d4;
+  color: #24292e;
   font-size: 0.9rem;
+  font-weight: 500;
 }
 
 .form-group input,
 .form-group select {
   width: 100%;
   padding: 0.75rem;
-  background-color: #1e1e1e;
-  border: 1px solid #3e3e42;
+  background-color: #ffffff;
+  border: 1px solid #d1d5da;
   border-radius: 6px;
-  color: #d4d4d4;
+  color: #24292e;
   font-size: 0.95rem;
   transition: all 0.2s ease;
 }
@@ -274,20 +277,20 @@ h3 {
 .form-group input:focus,
 .form-group select:focus {
   outline: none;
-  border-color: #007acc;
-  box-shadow: 0 0 0 3px rgba(0, 122, 204, 0.1);
+  border-color: #0366d6;
+  box-shadow: 0 0 0 3px rgba(3, 102, 214, 0.1);
 }
 
 .form-group small {
   display: block;
   margin-top: 0.25rem;
-  color: #858585;
+  color: #586069;
   font-size: 0.8rem;
 }
 
 .btn-primary {
   padding: 0.75rem 1.5rem;
-  background-color: #007acc;
+  background-color: #0366d6;
   color: white;
   border: none;
   border-radius: 6px;
@@ -295,30 +298,31 @@ h3 {
   font-size: 0.95rem;
   font-weight: 500;
   transition: all 0.2s ease;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .btn-primary:hover {
-  background-color: #005a9e;
-  box-shadow: 0 2px 6px rgba(0, 122, 204, 0.3);
+  background-color: #0256c7;
+  box-shadow: 0 2px 6px rgba(3, 102, 214, 0.3);
   transform: translateY(-1px);
 }
 
 .btn-primary:active {
   transform: translateY(0);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .btn-primary:disabled {
-  background-color: #3e3e42;
+  background-color: #d1d5da;
   cursor: not-allowed;
   box-shadow: none;
   transform: none;
+  color: #6a737d;
 }
 
 .btn-danger-small {
   padding: 0.4rem 0.8rem;
-  background-color: #f48771;
+  background-color: #dc3545;
   color: white;
   border: none;
   border-radius: 4px;
@@ -328,7 +332,7 @@ h3 {
 }
 
 .btn-danger-small:hover {
-  background-color: #d16950;
+  background-color: #c82333;
 }
 
 .status-message {
@@ -342,8 +346,8 @@ h3 {
   justify-content: space-between;
   padding: 0.75rem;
   margin-bottom: 0.5rem;
-  background-color: #1e1e1e;
-  border: 1px solid #3e3e42;
+  background-color: #ffffff;
+  border: 1px solid #e1e4e8;
   border-radius: 4px;
 }
 
@@ -357,15 +361,15 @@ h3 {
   display: inline-block;
   padding: 0.25rem 0.5rem;
   margin-right: 0.5rem;
-  background-color: #4ec9b0;
-  color: #1e1e1e;
+  background-color: #28a745;
+  color: #ffffff;
   border-radius: 3px;
   font-size: 0.75rem;
   font-weight: bold;
 }
 
 .loading {
-  color: #858585;
+  color: #6a737d;
   font-style: italic;
 }
 
