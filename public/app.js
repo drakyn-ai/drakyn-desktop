@@ -35,11 +35,13 @@ const chatMessages = document.getElementById('chat-messages');
 
 function addMessage(text, isUser = true) {
   const messageDiv = document.createElement('div');
-  messageDiv.style.padding = '0.5rem';
-  messageDiv.style.marginBottom = '0.5rem';
-  messageDiv.style.backgroundColor = isUser ? '#2a2d2e' : '#1e1e1e';
-  messageDiv.style.borderRadius = '4px';
-  messageDiv.style.borderLeft = isUser ? '3px solid #007acc' : '3px solid #858585';
+  messageDiv.style.padding = '0.75rem';
+  messageDiv.style.marginBottom = '0.75rem';
+  messageDiv.style.backgroundColor = isUser ? '#e8f4fd' : '#ffffff';
+  messageDiv.style.borderRadius = '8px';
+  messageDiv.style.borderLeft = isUser ? '3px solid #0366d6' : '3px solid #d1d5da';
+  messageDiv.style.color = '#24292e';
+  messageDiv.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.05)';
   messageDiv.textContent = `${isUser ? 'You' : 'Agent'}: ${text}`;
   chatMessages.appendChild(messageDiv);
   chatMessages.scrollTop = chatMessages.scrollHeight;
@@ -58,11 +60,13 @@ async function sendMessage() {
 
   // Create agent message container
   const agentMessageDiv = document.createElement('div');
-  agentMessageDiv.style.padding = '0.5rem';
-  agentMessageDiv.style.marginBottom = '0.5rem';
-  agentMessageDiv.style.backgroundColor = '#1e1e1e';
-  agentMessageDiv.style.borderRadius = '4px';
-  agentMessageDiv.style.borderLeft = '3px solid #858585';
+  agentMessageDiv.style.padding = '0.75rem';
+  agentMessageDiv.style.marginBottom = '0.75rem';
+  agentMessageDiv.style.backgroundColor = '#ffffff';
+  agentMessageDiv.style.borderRadius = '8px';
+  agentMessageDiv.style.borderLeft = '3px solid #d1d5da';
+  agentMessageDiv.style.color = '#24292e';
+  agentMessageDiv.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.05)';
   chatMessages.appendChild(agentMessageDiv);
 
   try {
@@ -98,23 +102,23 @@ async function sendMessage() {
           const data = JSON.parse(line.slice(6));
 
           if (data.type === 'thinking') {
-            agentMessageDiv.innerHTML = `<em style="color: #858585;">Thinking (iteration ${data.iteration + 1})...</em>`;
+            agentMessageDiv.innerHTML = `<em style="color: #6a737d;">Thinking (iteration ${data.iteration + 1})...</em>`;
             if (data.content) {
-              agentMessageDiv.innerHTML += `<br><div style="color: #858585; font-size: 0.9em; margin-top: 0.5rem; white-space: pre-wrap;">${data.content}</div>`;
+              agentMessageDiv.innerHTML += `<br><div style="color: #6a737d; font-size: 0.9em; margin-top: 0.5rem; white-space: pre-wrap;">${data.content}</div>`;
             }
           } else if (data.type === 'tool_call') {
-            agentMessageDiv.innerHTML = `<em style="color: #dcdcaa;">Calling tool: ${data.tool_name}</em>`;
+            agentMessageDiv.innerHTML = `<em style="color: #0366d6;">Calling tool: ${data.tool_name}</em>`;
             if (data.content) {
-              agentMessageDiv.innerHTML += `<br><em style="color: #858585;">Reasoning: ${data.content}</em>`;
+              agentMessageDiv.innerHTML += `<br><em style="color: #6a737d;">Reasoning: ${data.content}</em>`;
             }
-            agentMessageDiv.innerHTML += `<br><code style="font-size: 0.85em; display: block; margin-top: 0.5rem;">${JSON.stringify(data.tool_args, null, 2)}</code>`;
+            agentMessageDiv.innerHTML += `<br><code style="font-size: 0.85em; display: block; margin-top: 0.5rem; background-color: #f6f8fa; padding: 0.5rem; border-radius: 4px; color: #24292e;">${JSON.stringify(data.tool_args, null, 2)}</code>`;
           } else if (data.type === 'tool_result') {
-            agentMessageDiv.innerHTML += `<br><em style="color: #4ec9b0;">Tool result received</em>`;
+            agentMessageDiv.innerHTML += `<br><em style="color: #28a745;">Tool result received</em>`;
           } else if (data.type === 'answer') {
             finalAnswer = data.content;
-            agentMessageDiv.innerHTML = `<strong>Agent:</strong> ${data.content}`;
+            agentMessageDiv.innerHTML = `<strong style="color: #24292e;">Agent:</strong> ${data.content}`;
           } else if (data.type === 'error') {
-            agentMessageDiv.innerHTML = `<strong style="color: #f48771;">Error:</strong> ${data.error}`;
+            agentMessageDiv.innerHTML = `<strong style="color: #dc3545;">Error:</strong> ${data.error}`;
           } else if (data.type === 'done') {
             // Stream complete
             break;
@@ -126,7 +130,7 @@ async function sendMessage() {
     }
 
   } catch (error) {
-    agentMessageDiv.innerHTML = `<strong style="color: #f48771;">Connection error:</strong> ${error.message}. Make sure a model is loaded.`;
+    agentMessageDiv.innerHTML = `<strong style="color: #dc3545;">Connection error:</strong> ${error.message}. Make sure a model is loaded.`;
   } finally {
     // Re-enable input
     messageInput.disabled = false;
