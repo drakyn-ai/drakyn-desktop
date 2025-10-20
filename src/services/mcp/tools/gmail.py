@@ -161,21 +161,43 @@ class GmailTool:
         return credentials_path.exists()
 
     @staticmethod
-    def get_setup_instructions() -> str:
+    def get_setup_instructions() -> Dict[str, Any]:
         """Get setup instructions for Gmail integration."""
-        return """
-# Gmail Setup Instructions
-
-1. Go to Google Cloud Console (https://console.cloud.google.com)
-2. Create a new project or select an existing one
-3. Enable the Gmail API
-4. Create OAuth 2.0 credentials:
-   - Go to APIs & Services > Credentials
-   - Click "Create Credentials" > "OAuth client ID"
-   - Choose "Desktop app" as application type
-   - Download the credentials JSON file
-5. Save the file as: {credentials_dir}/gmail_credentials.json
-6. On first use, a browser will open for OAuth authorization
-
-Credentials directory: {credentials_dir}
-""".format(credentials_dir=GmailTool.CREDENTIALS_DIR)
+        return {
+            "tool": "gmail",
+            "requires_oauth": True,
+            "steps": [
+                {
+                    "step": 1,
+                    "title": "Create Google Cloud Project",
+                    "description": "Go to Google Cloud Console",
+                    "url": "https://console.cloud.google.com",
+                    "action": "Create a new project or select existing"
+                },
+                {
+                    "step": 2,
+                    "title": "Enable Gmail API",
+                    "description": "Enable the Gmail API for your project",
+                    "action": "Go to APIs & Services > Library, search 'Gmail API', click Enable"
+                },
+                {
+                    "step": 3,
+                    "title": "Create OAuth Credentials",
+                    "description": "Create OAuth 2.0 Desktop credentials",
+                    "action": "Go to APIs & Services > Credentials > Create Credentials > OAuth client ID > Desktop app"
+                },
+                {
+                    "step": 4,
+                    "title": "Download Credentials",
+                    "description": "Download the credentials JSON file",
+                    "action": "Click the download icon next to your OAuth client"
+                },
+                {
+                    "step": 5,
+                    "title": "Upload to Drakyn",
+                    "description": "Upload the credentials file using the chat interface",
+                    "action": "I can help you upload it - just paste the contents or use the upload button"
+                }
+            ],
+            "quick_summary": "To use Gmail, I need OAuth credentials from Google Cloud Console. I'll guide you through the setup step-by-step."
+        }

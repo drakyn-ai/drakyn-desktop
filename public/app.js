@@ -621,7 +621,92 @@ document.addEventListener('DOMContentLoaded', () => {
   checkServerStatus();
   refreshModelsList();
   checkChatConnection();
+  checkGmailStatus();
 
   // Check connection status every 2 seconds
   connectionCheckInterval = setInterval(checkChatConnection, 2000);
 });
+
+// Gmail Setup Functions
+async function checkGmailStatus() {
+  const statusText = document.getElementById('gmail-status-text');
+
+  try {
+    const response = await fetch('http://localhost:8001/credentials/gmail/status');
+    const data = await response.json();
+
+    if (data.configured) {
+      statusText.textContent = 'Configured ✓';
+      statusText.style.color = '#28a745';
+    } else {
+      statusText.textContent = 'Not configured';
+      statusText.style.color = '#dc3545';
+    }
+  } catch (error) {
+    statusText.textContent = 'Unable to check (MCP server offline)';
+    statusText.style.color = '#6a737d';
+  }
+}
+
+async function uploadGmailCredentials() {
+  const fileInput = document.getElementById('gmail-credentials-file');
+  const statusEl = document.getElementById('gmail-upload-status');
+  const file = fileInput.files[0];
+
+  if (!file) {
+    statusEl.textContent = 'Please select a file';
+    statusEl.style.color = '#dc3545';
+    return;
+  }
+
+  try {
+    statusEl.textContent = 'Uploading...';
+    statusEl.style.color = '#0366d6';
+
+    // Read file contents
+    const fileContents = await file.text();
+
+    // Validate it's JSON
+    try {
+      JSON.parse(fileContents);
+    } catch (e) {
+      throw new Error('Invalid JSON file');
+    }
+
+    // Upload to MCP server
+    const response = await fetch('http://localhost:8001/credentials/upload', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        tool_name: 'gmail',
+        credentials: fileContents
+      })
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Upload failed');
+    }
+
+    const result = await response.json();
+
+    statusEl.textContent = result.message + ' ✓';
+    statusEl.style.color = '#28a745';
+
+    // Update status
+    checkGmailStatus();
+
+    // Clear file input
+    fileInput.value = '';
+
+  } catch (error) {
+    statusEl.textContent = `Error: ${error.message}`;
+    statusEl.style.color = '#dc3545';
+  }
+}
+
+// Add event listener for Gmail upload
+const uploadGmailBtn = document.getElementById('upload-gmail-credentials-btn');
+if (uploadGmailBtn) {
+  uploadGmailBtn.addEventListener('click', uploadGmailCredentials);
+}
