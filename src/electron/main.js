@@ -33,11 +33,17 @@ function createWindow() {
   // Load the UI
   mainWindow.loadFile(path.join(__dirname, '../../public/index.html'));
 
-  // Only open DevTools in development mode with --dev flag
-  // Don't open automatically
-  // if (process.argv.includes('--dev')) {
-  //   mainWindow.webContents.openDevTools();
-  // }
+  // Enable development mode with --dev flag
+  if (process.argv.includes('--dev')) {
+    mainWindow.webContents.openDevTools();
+
+    // Enable quick reload with Ctrl+R / Cmd+R
+    mainWindow.webContents.on('before-input-event', (event, input) => {
+      if ((input.control || input.meta) && input.key.toLowerCase() === 'r') {
+        mainWindow.reload();
+      }
+    });
+  }
 
   mainWindow.on('closed', () => {
     mainWindow = null;
