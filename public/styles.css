@@ -20,29 +20,45 @@ body {
 
 header {
   background-color: #252526;
-  padding: 1rem 2rem;
+  padding: 1rem 1.5rem;
   border-bottom: 1px solid #3e3e42;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+header .header-content {
   display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
+  align-items: center;
+  gap: 1rem;
 }
 
 header .logo {
-  height: 40px;
-  width: auto;
+  height: 48px;
+  width: 48px;
   object-fit: contain;
-  object-position: left;
+  border-radius: 8px;
+  background-color: #1e1e1e;
+  padding: 4px;
+}
+
+header .header-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
 }
 
 header h1 {
-  font-size: 1.5rem;
-  margin-bottom: 0.25rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0;
+  color: #ffffff;
+  letter-spacing: -0.02em;
 }
 
 header p {
-  font-size: 0.875rem;
+  font-size: 0.8rem;
   color: #858585;
   margin: 0;
+  font-weight: 400;
 }
 
 main {
@@ -52,20 +68,21 @@ main {
 }
 
 .sidebar {
-  width: 200px;
+  width: 220px;
   background-color: #252526;
   border-right: 1px solid #3e3e42;
-  padding: 1rem 0;
+  padding: 0.5rem 0;
 }
 
 .sidebar ul {
   list-style: none;
+  padding: 0.5rem;
 }
 
 .sidebar li {
-  padding: 0.75rem 1.5rem;
-  cursor: pointer;
-  transition: background-color 0.2s;
+  margin-bottom: 0.25rem;
+  border-radius: 6px;
+  overflow: hidden;
 }
 
 .sidebar li:hover {
@@ -76,6 +93,17 @@ main {
   color: #d4d4d4;
   text-decoration: none;
   display: block;
+  padding: 0.75rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.15s ease;
+  border-left: 3px solid transparent;
+}
+
+.sidebar li:hover a {
+  color: #ffffff;
+  border-left-color: #007acc;
+  padding-left: 1.125rem;
 }
 
 .content {
@@ -140,10 +168,11 @@ main {
   height: calc(100vh - 280px);
   overflow-y: auto;
   margin-bottom: 1rem;
-  padding: 1rem;
-  background-color: #1e1e1e;
+  padding: 1.5rem;
+  background-color: #1a1a1a;
   border: 1px solid #3e3e42;
-  border-radius: 4px;
+  border-radius: 8px;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .chat-input {
@@ -153,32 +182,50 @@ main {
 
 #message-input {
   flex: 1;
-  padding: 0.75rem;
+  padding: 0.875rem 1rem;
   background-color: #252526;
   border: 1px solid #3e3e42;
-  border-radius: 4px;
+  border-radius: 8px;
   color: #d4d4d4;
-  font-size: 1rem;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
 }
 
 #message-input:focus {
   outline: none;
   border-color: #007acc;
+  box-shadow: 0 0 0 3px rgba(0, 122, 204, 0.1);
 }
 
 #send-button {
-  padding: 0.75rem 1.5rem;
+  padding: 0.875rem 1.75rem;
   background-color: #007acc;
   color: white;
   border: none;
-  border-radius: 4px;
+  border-radius: 8px;
   cursor: pointer;
-  font-size: 1rem;
-  transition: background-color 0.2s;
+  font-size: 0.95rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 #send-button:hover {
   background-color: #005a9e;
+  box-shadow: 0 2px 6px rgba(0, 122, 204, 0.3);
+  transform: translateY(-1px);
+}
+
+#send-button:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+#send-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 h2 {
@@ -196,8 +243,9 @@ h3 {
   background-color: #252526;
   padding: 1.5rem;
   margin-bottom: 1.5rem;
-  border-radius: 4px;
+  border-radius: 8px;
   border: 1px solid #3e3e42;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 .form-group {
@@ -211,19 +259,23 @@ h3 {
   font-size: 0.9rem;
 }
 
-.form-group input {
+.form-group input,
+.form-group select {
   width: 100%;
   padding: 0.75rem;
   background-color: #1e1e1e;
   border: 1px solid #3e3e42;
-  border-radius: 4px;
+  border-radius: 6px;
   color: #d4d4d4;
-  font-size: 1rem;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
 }
 
-.form-group input:focus {
+.form-group input:focus,
+.form-group select:focus {
   outline: none;
   border-color: #007acc;
+  box-shadow: 0 0 0 3px rgba(0, 122, 204, 0.1);
 }
 
 .form-group small {
@@ -238,19 +290,30 @@ h3 {
   background-color: #007acc;
   color: white;
   border: none;
-  border-radius: 4px;
+  border-radius: 6px;
   cursor: pointer;
-  font-size: 1rem;
-  transition: background-color 0.2s;
+  font-size: 0.95rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 .btn-primary:hover {
   background-color: #005a9e;
+  box-shadow: 0 2px 6px rgba(0, 122, 204, 0.3);
+  transform: translateY(-1px);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 .btn-primary:disabled {
   background-color: #3e3e42;
   cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
 }
 
 .btn-danger-small {
