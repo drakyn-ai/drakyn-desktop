@@ -8,12 +8,17 @@ This avoids restarting the Python server every time you make UI changes:
 
 **Terminal 1 - Python Server (keep running):**
 ```bash
-npm run server
+npm run server           # Linux/Mac/WSL
+# Or on Windows CMD/PowerShell:
+npm run server:win
+
 # Or manually:
 cd src/services/inference
 source venv/bin/activate  # Windows: venv\Scripts\activate
 python server.py
 ```
+
+**Note:** The npm scripts automatically use the venv Python to avoid conflicts with system Python or conda environments.
 
 **Terminal 2 - Electron App (restart as needed):**
 ```bash
@@ -85,12 +90,13 @@ npm start
 ## Scripts Reference
 
 ```bash
-npm start          # Start app (production mode)
-npm run dev        # Start app (development mode with DevTools)
-npm run server     # Run Python server only
-npm run build      # Build distributable
-npm run build:win  # Build for Windows
-npm run build:mac  # Build for macOS
+npm start           # Start app (production mode)
+npm run dev         # Start app (development mode with DevTools)
+npm run server      # Run Python server only (Linux/Mac/WSL)
+npm run server:win  # Run Python server only (Windows)
+npm run build       # Build distributable
+npm run build:win   # Build for Windows
+npm run build:mac   # Build for macOS
 npm run build:linux # Build for Linux
 ```
 

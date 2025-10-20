@@ -6,7 +6,8 @@
   "scripts": {
     "start": "electron .",
     "dev": "electron . --dev",
-    "server": "cd src/services/inference && python server.py",
+    "server": "cd src/services/inference && ./venv/bin/python server.py",
+    "server:win": "cd src/services/inference && venv\\Scripts\\python.exe server.py",
     "build": "electron-builder",
     "build:mac": "electron-builder --mac",
     "build:win": "electron-builder --win",
