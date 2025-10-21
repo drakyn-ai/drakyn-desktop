@@ -307,6 +307,12 @@ async function loadModel() {
     if (response.ok) {
       statusEl.textContent = `Success: ${data.message}`;
       statusEl.style.color = '#4ec9b0';
+
+      // Save model selection to localStorage
+      localStorage.setItem('lastModel', modelPath);
+      localStorage.setItem('lastGpuMemory', gpuMemory);
+      localStorage.setItem('lastTensorParallel', tensorParallel);
+
       refreshModelsList();
       checkServerStatus();
     } else {
@@ -639,6 +645,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // Check connection status every 2 seconds
   connectionCheckInterval = setInterval(checkChatConnection, 2000);
 
+  // Auto-load last model after a short delay (let servers start)
+  setTimeout(autoLoadLastModel, 1500);
+
   // Send proactive greeting after a short delay (let servers start)
   setTimeout(sendProactiveGreeting, 2000);
 });
@@ -954,5 +963,98 @@ async function sendProactiveGreeting() {
     // Simple fallback greeting
     addMessage('Hello! I\'m here and ready to help. What can I do for you today?', false);
     sessionStorage.setItem('greeted', 'true');
+  }
+}
+
+// Auto-load last model on startup
+async function autoLoadLastModel() {
+  const lastModel = localStorage.getItem('lastModel');
+  
+  if (!lastModel) {
+    console.log('No previous model found');
+    return;
+  }
+
+  console.log('Auto-loading last model:', lastModel);
+
+  // Wait a bit for server to be ready
+  await new Promise(resolve => setTimeout(resolve, 1000));
+
+  // Check if server is responsive
+  try {
+    const healthCheck = await fetch(`${API_BASE_URL}/health`, { timeout: 2000 });
+    if (!healthCheck.ok) {
+      console.log('Server not ready, skipping auto-load');
+      return;
+    }
+  } catch (error) {
+    console.log('Server not ready, skipping auto-load');
+    return;
+  }
+
+  // Load saved model settings
+  const gpuMemory = parseFloat(localStorage.getItem('lastGpuMemory') || '0.9');
+  const tensorParallel = parseInt(localStorage.getItem('lastTensorParallel') || '1');
+
+  // Set form values
+  const dropdown = document.getElementById('model-dropdown');
+  const gpuMemoryInput = document.getElementById('gpu-memory');
+  const tensorParallelInput = document.getElementById('tensor-parallel');
+
+  if (dropdown) {
+    dropdown.value = lastModel;
+    // If not in dropdown, use text input
+    if (!dropdown.value) {
+      const modelPathInput = document.getElementById('model-path');
+      if (modelPathInput) {
+        modelPathInput.value = lastModel;
+      }
+    }
+  }
+  
+  if (gpuMemoryInput) gpuMemoryInput.value = gpuMemory;
+  if (tensorParallelInput) tensorParallelInput.value = tensorParallel;
+
+  // Load the model
+  const statusEl = document.getElementById('load-status');
+  if (statusEl) {
+    statusEl.textContent = 'Auto-loading last model...';
+    statusEl.style.color = '#dcdcaa';
+  }
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/load_model`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model_name_or_path: lastModel,
+        gpu_memory_utilization: gpuMemory,
+        tensor_parallel_size: tensorParallel
+      })
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      if (statusEl) {
+        statusEl.textContent = `Auto-loaded: ${lastModel}`;
+        statusEl.style.color = '#4ec9b0';
+      }
+      console.log('Successfully auto-loaded model:', lastModel);
+      refreshModelsList();
+      checkServerStatus();
+    } else {
+      if (statusEl) {
+        statusEl.textContent = `Failed to auto-load: ${data.detail}`;
+        statusEl.style.color = '#f48771';
+      }
+      console.error('Failed to auto-load model:', data.detail);
+    }
+  } catch (error) {
+    if (statusEl) {
+      statusEl.textContent = 'Auto-load failed - server may still be starting';
+      statusEl.style.color = '#f48771';
+    }
+    console.error('Auto-load error:', error.message);
   }
 }
