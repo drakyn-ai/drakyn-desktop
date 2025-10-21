@@ -129,11 +129,34 @@ main {
   margin-bottom: 1rem;
 }
 
+.status-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
 .connection-status {
   display: flex;
   align-items: center;
   gap: 0.5rem;
   font-size: 0.9rem;
+}
+
+.agent-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.agent-status #agent-status-icon {
+  font-size: 1.2rem;
+}
+
+.agent-status.active #agent-status-text {
+  color: var(--text-primary);
+  font-weight: 500;
 }
 
 .status-dot {

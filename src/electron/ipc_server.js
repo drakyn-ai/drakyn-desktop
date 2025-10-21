@@ -57,6 +57,10 @@ function createIPCServer(window, port = 9999) {
           handleSuggestion(data);
           res.writeHead(200, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ success: true }));
+        } else if (req.url === '/agent-status') {
+          handleAgentStatus(data);
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: true }));
         } else {
           res.writeHead(404, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ error: 'Endpoint not found' }));
@@ -123,6 +127,18 @@ function handleSuggestion(suggestion) {
   // Notify renderer
   if (mainWindow && mainWindow.webContents) {
     mainWindow.webContents.send('new-suggestion', suggestion);
+  }
+}
+
+/**
+ * Handle agent status update from monitor service.
+ */
+function handleAgentStatus(status) {
+  console.log('[IPC Server] Agent status:', status.state);
+
+  // Forward to renderer process
+  if (mainWindow && mainWindow.webContents) {
+    mainWindow.webContents.send('agent-status-update', status);
   }
 }
 

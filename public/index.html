@@ -45,9 +45,15 @@
         <div id="chat-page" class="page active">
           <div class="chat-header">
             <h2>Chat with Agent</h2>
-            <div class="connection-status">
-              <span id="connection-indicator" class="status-dot"></span>
-              <span id="connection-text">Connecting...</span>
+            <div class="status-container">
+              <div class="connection-status">
+                <span id="connection-indicator" class="status-dot"></span>
+                <span id="connection-text">Connecting...</span>
+              </div>
+              <div class="agent-status">
+                <span id="agent-status-icon">😴</span>
+                <span id="agent-status-text">Agent idle</span>
+              </div>
             </div>
           </div>
           <div id="chat-messages"></div>

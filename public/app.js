@@ -634,9 +634,13 @@ document.addEventListener('DOMContentLoaded', () => {
   refreshModelsList();
   checkChatConnection();
   checkGmailStatus();
+  initAgentStatus();
 
   // Check connection status every 2 seconds
   connectionCheckInterval = setInterval(checkChatConnection, 2000);
+
+  // Send proactive greeting after a short delay (let servers start)
+  setTimeout(sendProactiveGreeting, 2000);
 });
 
 // Gmail Setup Functions
@@ -815,3 +819,140 @@ document.querySelectorAll('.sidebar a').forEach(link => {
     }
   });
 });
+
+// Agent Status Management
+let agentStatusData = {
+  state: 'idle', // idle, active, sleeping
+  nextCheckTime: null,
+  checkInterval: 30 * 60 * 1000 // 30 minutes in ms
+};
+
+function initAgentStatus() {
+  // Listen for agent status updates from monitor service (via IPC)
+  if (typeof window.electronAPI !== 'undefined') {
+    window.electronAPI.receive('agent-status-update', (data) => {
+      updateAgentStatus(data);
+    });
+  }
+
+  // Start countdown timer
+  updateAgentStatusDisplay();
+  setInterval(updateAgentStatusDisplay, 1000); // Update every second
+}
+
+function updateAgentStatus(data) {
+  agentStatusData = { ...agentStatusData, ...data };
+  updateAgentStatusDisplay();
+}
+
+function updateAgentStatusDisplay() {
+  const iconEl = document.getElementById('agent-status-icon');
+  const textEl = document.getElementById('agent-status-text');
+  const containerEl = document.querySelector('.agent-status');
+
+  if (!iconEl || !textEl) return;
+
+  // If next check time is set, calculate time remaining
+  if (agentStatusData.nextCheckTime) {
+    const now = Date.now();
+    const timeRemaining = agentStatusData.nextCheckTime - now;
+
+    if (timeRemaining > 0) {
+      const minutes = Math.floor(timeRemaining / 60000);
+      const seconds = Math.floor((timeRemaining % 60000) / 1000);
+
+      if (minutes > 0) {
+        iconEl.textContent = '😴';
+        textEl.textContent = `Agent idle, waking up in ${minutes}m ${seconds}s`;
+        containerEl.classList.remove('active');
+      } else {
+        iconEl.textContent = '⏰';
+        textEl.textContent = `Agent waking up in ${seconds}s`;
+        containerEl.classList.add('active');
+      }
+    } else {
+      iconEl.textContent = '🤔';
+      textEl.textContent = 'Agent checking context...';
+      containerEl.classList.add('active');
+    }
+  } else {
+    // No next check time set - agent is idle
+    iconEl.textContent = '😴';
+    textEl.textContent = 'Agent idle';
+    containerEl.classList.remove('active');
+  }
+
+  // Override for active state
+  if (agentStatusData.state === 'active') {
+    iconEl.textContent = '🤔';
+    textEl.textContent = 'Agent thinking...';
+    containerEl.classList.add('active');
+  } else if (agentStatusData.state === 'disabled') {
+    iconEl.textContent = '💤';
+    textEl.textContent = 'Agent monitoring disabled';
+    containerEl.classList.remove('active');
+  }
+}
+
+// Proactive Greeting on Startup
+async function sendProactiveGreeting() {
+  // Check if already greeted (session storage)
+  if (sessionStorage.getItem('greeted')) return;
+
+  // Wait for connection to be ready
+  const connectionIndicator = document.getElementById('connection-indicator');
+  if (!connectionIndicator || !connectionIndicator.classList.contains('connected')) {
+    // Retry in 2 seconds
+    setTimeout(sendProactiveGreeting, 2000);
+    return;
+  }
+
+  try {
+    // Read user context to personalize greeting
+    const contextResponse = await fetch('http://localhost:8001/execute', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        tool: 'user_context',
+        arguments: { action: 'read' }
+      })
+    });
+
+    const contextData = await contextResponse.json();
+    let userName = 'there';
+
+    // Try to extract user name from context
+    if (contextData.result && contextData.result.content) {
+      const nameMatch = contextData.result.content.match(/Name:\s*(\w+)/i);
+      if (nameMatch) {
+        userName = nameMatch[1];
+      }
+    }
+
+    // Get current time for time-appropriate greeting
+    const hour = new Date().getHours();
+    let timeGreeting = 'Hello';
+    if (hour < 12) timeGreeting = 'Good morning';
+    else if (hour < 18) timeGreeting = 'Good afternoon';
+    else timeGreeting = 'Good evening';
+
+    // Create greeting message
+    const greeting = `${timeGreeting}, ${userName}! 👋\n\nI'm here and ready to help. I'm also monitoring in the background every 30 minutes to proactively suggest ways I can assist you.\n\nWhat would you like to work on today?`;
+
+    // Add as agent message
+    addMessage(greeting, false);
+
+    // Set next check time (30 minutes from now)
+    agentStatusData.nextCheckTime = Date.now() + agentStatusData.checkInterval;
+    updateAgentStatusDisplay();
+
+    // Mark as greeted
+    sessionStorage.setItem('greeted', 'true');
+
+  } catch (error) {
+    console.error('Failed to send proactive greeting:', error);
+    // Simple fallback greeting
+    addMessage('Hello! I\'m here and ready to help. What can I do for you today?', false);
+    sessionStorage.setItem('greeted', 'true');
+  }
+}

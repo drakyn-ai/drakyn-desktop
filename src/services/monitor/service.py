@@ -73,12 +73,17 @@ class BackgroundMonitor:
 
         while True:
             try:
+                # Calculate next check time and broadcast status
+                next_check_ms = int((datetime.now().timestamp() + (self.check_interval_minutes * 60)) * 1000)
+                await self._broadcast_status("idle", next_check_ms)
+
                 # Read user preferences from context file
                 preferences = await self._read_user_preferences()
 
                 # Check if monitoring is enabled
                 if not preferences.get("enabled", True):
                     logger.info("Proactive monitoring is disabled. Sleeping...")
+                    await self._broadcast_status("disabled", None)
                     await asyncio.sleep(60 * 5)  # Check every 5 minutes if it gets re-enabled
                     continue
 
@@ -89,6 +94,7 @@ class BackgroundMonitor:
                     continue
 
                 logger.info("=== Starting proactive check ===")
+                await self._broadcast_status("active", None)
 
                 # Gather current context
                 context_snapshot = await self.gather_context()
@@ -415,6 +421,27 @@ Remember: Better to stay quiet than be annoying. Only suggest truly helpful thin
         except Exception as e:
             logger.warning(f"Failed to check quiet hours: {str(e)}")
             return False
+
+    async def _broadcast_status(self, state: str, next_check_time_ms: int = None):
+        """
+        Broadcast agent status to UI via IPC server.
+
+        Args:
+            state: Current state (idle, active, disabled)
+            next_check_time_ms: Timestamp in milliseconds for next check
+        """
+        try:
+            async with httpx.AsyncClient(timeout=5.0) as client:
+                await client.post(
+                    f"{self.electron_ipc_url}/agent-status",
+                    json={
+                        "state": state,
+                        "nextCheckTime": next_check_time_ms,
+                        "checkInterval": self.check_interval_minutes * 60 * 1000  # in ms
+                    }
+                )
+        except Exception as e:
+            logger.debug(f"Failed to broadcast status: {str(e)}")
 
     async def _notify_suggestions(self, suggestions: List[Dict[str, Any]]):
         """
