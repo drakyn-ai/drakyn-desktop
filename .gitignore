@@ -43,3 +43,11 @@ logs/
 # Environment
 .env
 .env.local
+
+# Gmail tokens (user-specific, should not be committed)
+src/services/mcp/tokens/
+*.token.json
+gmail_token.json
+
+# Credentials (sensitive)
+src/services/mcp/credentials/

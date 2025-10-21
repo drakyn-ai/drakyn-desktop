@@ -2,18 +2,59 @@
 MCP (Model Context Protocol) server for agent tool integration.
 """
 import logging
+import sys
+from pathlib import Path
+from logging.handlers import RotatingFileHandler
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Dict, Any, Optional
 import uvicorn
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+env_path = Path(__file__).parent / '.env'
+if env_path.exists():
+    load_dotenv(env_path)
+    logging.info(f"Loaded environment variables from {env_path}")
 
 # Import tools
 from tools.files import FileSearchTool
 from tools.gmail import GmailTool
 
-logging.basicConfig(level=logging.INFO)
+# Setup logging to both console and file
+logs_dir = Path(__file__).parent / 'logs'
+logs_dir.mkdir(exist_ok=True)
+
+# Configure root logger
+root_logger = logging.getLogger()
+root_logger.setLevel(logging.INFO)
+
+# Create formatter
+formatter = logging.Formatter(
+    '%(asctime)s.%(msecs)03d - %(name)s - %(levelname)s - %(message)s',
+    datefmt='%H:%M:%S'
+)
+
+# Console handler (stdout)
+console_handler = logging.StreamHandler(sys.stdout)
+console_handler.setLevel(logging.INFO)
+console_handler.setFormatter(formatter)
+root_logger.addHandler(console_handler)
+
+# File handler with rotation (10MB max, keep 5 backups)
+file_handler = RotatingFileHandler(
+    logs_dir / 'mcp_server.log',
+    maxBytes=10 * 1024 * 1024,  # 10MB
+    backupCount=5,
+    encoding='utf-8'
+)
+file_handler.setLevel(logging.INFO)
+file_handler.setFormatter(formatter)
+root_logger.addHandler(file_handler)
+
 logger = logging.getLogger(__name__)
+logger.info(f"Logging to console and {logs_dir / 'mcp_server.log'}")
 
 app = FastAPI(title="Drakyn MCP Server")
 
