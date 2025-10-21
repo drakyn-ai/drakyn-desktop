@@ -16,8 +16,20 @@
           <h1>Drakyn</h1>
           <p>Local AI Agent</p>
         </div>
+        <div id="suggestion-badge" class="suggestion-badge" style="display: none;">
+          <span id="suggestion-count">0</span>
+        </div>
       </div>
     </header>
+
+    <!-- Suggestion Panel (floating) -->
+    <div id="suggestion-panel" class="suggestion-panel" style="display: none;">
+      <div class="suggestion-panel-header">
+        <h3>💡 Suggestions</h3>
+        <button id="close-suggestions">×</button>
+      </div>
+      <div id="suggestion-list" class="suggestion-list"></div>
+    </div>
 
     <main>
       <nav class="sidebar">
@@ -262,5 +274,6 @@
   </div>
 
   <script src="app.js"></script>
+  <script src="suggestions.js"></script>
 </body>
 </html>

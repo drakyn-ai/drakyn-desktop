@@ -14,6 +14,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, Any, List, Optional
 import httpx
+from notifications import NotificationManager
 
 logger = logging.getLogger(__name__)
 
@@ -28,6 +29,7 @@ class BackgroundMonitor:
         self,
         mcp_url: str = "http://localhost:8001",
         inference_url: str = "http://localhost:8000",
+        electron_ipc_url: str = "http://localhost:9999",
         check_interval_minutes: int = 30
     ):
         """
@@ -36,6 +38,7 @@ class BackgroundMonitor:
         Args:
             mcp_url: URL of MCP server for tool execution
             inference_url: URL of inference server for agent chat
+            electron_ipc_url: URL for Electron IPC server
             check_interval_minutes: How often to check context (default: 30 minutes)
         """
         self.mcp_url = mcp_url
@@ -49,6 +52,9 @@ class BackgroundMonitor:
         # Context files
         self.context_file = self.user_dir / "user_context.txt"
         self.suggestion_history_file = self.user_dir / "suggestion_history.txt"
+
+        # Notification manager
+        self.notifier = NotificationManager(electron_ipc_url)
 
         logger.info(f"Background monitor initialized with {check_interval_minutes}min interval")
 
@@ -391,23 +397,22 @@ Remember: Better to stay quiet than be annoying. Only suggest truly helpful thin
 
     async def _notify_suggestions(self, suggestions: List[Dict[str, Any]]):
         """
-        Send suggestions to user (to be implemented).
+        Send suggestions to user via notification manager.
 
-        For now, just log them.
+        Args:
+            suggestions: List of suggestions to notify
         """
-        logger.info("=== SUGGESTIONS ===")
-        for i, suggestion in enumerate(suggestions, 1):
-            logger.info(f"{i}. {suggestion['action']}")
-            if suggestion.get('reasoning'):
-                logger.info(f"   Why: {suggestion['reasoning']}")
+        # Send via notification manager (system notifications + in-app)
+        await self.notifier.send_suggestions(suggestions)
 
-        # Append to suggestion history
+        # Also append to suggestion history file
         try:
             with open(self.suggestion_history_file, "a") as f:
                 for suggestion in suggestions:
                     f.write(f"\n[{suggestion['timestamp']}] SUGGESTED: {suggestion['action']}\n")
                     if suggestion.get('reasoning'):
                         f.write(f"  REASONING: {suggestion['reasoning']}\n")
+                    f.write(f"  STATUS: pending\n")
         except Exception as e:
             logger.warning(f"Failed to write suggestion history: {str(e)}")
 

@@ -380,3 +380,173 @@ h3 {
 #inference-status {
   font-weight: bold;
 }
+
+/* Suggestion Badge */
+.suggestion-badge {
+  margin-left: auto;
+  background-color: #2563eb;
+  color: white;
+  border-radius: 12px;
+  padding: 4px 12px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.suggestion-badge:hover {
+  background-color: #1d4ed8;
+}
+
+/* Suggestion Panel */
+.suggestion-panel {
+  position: fixed;
+  top: 80px;
+  right: 20px;
+  width: 400px;
+  max-height: 600px;
+  background: white;
+  border: 1px solid #e1e4e8;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.suggestion-panel-header {
+  padding: 16px;
+  border-bottom: 1px solid #e1e4e8;
+  background-color: #f8f9fa;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.suggestion-panel-header h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0;
+}
+
+.suggestion-panel-header button {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 0;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.suggestion-panel-header button:hover {
+  background-color: #e5e7eb;
+}
+
+.suggestion-list {
+  overflow-y: auto;
+  flex: 1;
+}
+
+.suggestion-item {
+  padding: 16px;
+  border-bottom: 1px solid #e1e4e8;
+  transition: background-color 0.2s;
+}
+
+.suggestion-item:last-child {
+  border-bottom: none;
+}
+
+.suggestion-item:hover {
+  background-color: #f9fafb;
+}
+
+.suggestion-action {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 8px;
+}
+
+.suggestion-reasoning {
+  font-size: 14px;
+  color: #6b7280;
+  margin-bottom: 12px;
+  line-height: 1.5;
+}
+
+.suggestion-time {
+  font-size: 12px;
+  color: #9ca3af;
+  margin-bottom: 12px;
+}
+
+.suggestion-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.suggestion-buttons button {
+  flex: 1;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+}
+
+.btn-accept {
+  background-color: #10b981;
+  color: white;
+}
+
+.btn-accept:hover {
+  background-color: #059669;
+}
+
+.btn-dismiss {
+  background-color: #f3f4f6;
+  color: #6b7280;
+}
+
+.btn-dismiss:hover {
+  background-color: #e5e7eb;
+  color: #374151;
+}
+
+.suggestion-item.handled {
+  opacity: 0.6;
+}
+
+.suggestion-item.handled .suggestion-buttons {
+  display: none;
+}
+
+.suggestion-status {
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  display: inline-block;
+  font-weight: 500;
+}
+
+.status-accepted {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.status-dismissed {
+  background-color: #f3f4f6;
+  color: #6b7280;
+}

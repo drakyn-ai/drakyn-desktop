@@ -2,11 +2,13 @@ const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const { spawn } = require('child_process');
 const fs = require('fs');
+const { createIPCServer } = require('./ipc_server');
 
 let mainWindow;
 let inferenceProcess;
 let mcpProcess;
 let monitorProcess;
+let ipcServer;
 let setupInProgress = false;
 let setupStatus = 'Starting...';
 
@@ -373,6 +375,10 @@ function setupIPCHandlers() {
 app.on('ready', () => {
   setupIPCHandlers();
   createWindow();
+
+  // Start IPC server for Python services to communicate with Electron
+  ipcServer = createIPCServer(mainWindow, 9999);
+
   // Auto-start inference server (starts fast in openai_compatible mode)
   startInferenceServer();
   // Start MCP server for agent tools
@@ -396,4 +402,10 @@ app.on('activate', () => {
 
 app.on('before-quit', () => {
   stopServices();
+
+  // Close IPC server
+  if (ipcServer) {
+    ipcServer.close();
+    ipcServer = null;
+  }
 });

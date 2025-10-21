@@ -15,3 +15,13 @@ contextBridge.exposeInMainWorld('electron', {
     }
   }
 });
+
+// Expose electron API for suggestions
+contextBridge.exposeInMainWorld('electronAPI', {
+  receive: (channel, func) => {
+    const validChannels = ['proactive-suggestion', 'new-suggestion', 'setup-status'];
+    if (validChannels.includes(channel)) {
+      ipcRenderer.on(channel, (event, ...args) => func(...args));
+    }
+  }
+});
