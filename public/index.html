@@ -226,6 +226,72 @@
           </div>
 
           <div class="model-section">
+            <h3>Proactive Agent</h3>
+            <p>Configure background monitoring and proactive suggestions.</p>
+
+            <div class="form-group">
+              <label class="checkbox-label">
+                <input type="checkbox" id="proactive-enabled" checked />
+                Enable proactive monitoring
+              </label>
+              <small>Agent monitors your context and suggests helpful actions</small>
+            </div>
+
+            <div class="form-group">
+              <label for="check-interval">Check Interval (minutes):</label>
+              <select id="check-interval">
+                <option value="15">Every 15 minutes</option>
+                <option value="30" selected>Every 30 minutes</option>
+                <option value="60">Every hour</option>
+                <option value="120">Every 2 hours</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="quiet-hours-start">Quiet Hours Start:</label>
+              <input type="time" id="quiet-hours-start" value="22:00" />
+            </div>
+
+            <div class="form-group">
+              <label for="quiet-hours-end">Quiet Hours End:</label>
+              <input type="time" id="quiet-hours-end" value="07:00" />
+            </div>
+
+            <div class="form-group">
+              <label for="max-questions">Max Questions Per Day:</label>
+              <select id="max-questions">
+                <option value="1">1 question</option>
+                <option value="2">2 questions</option>
+                <option value="3" selected>3 questions</option>
+                <option value="5">5 questions</option>
+              </select>
+              <small>How many learning questions agent can ask per day</small>
+            </div>
+
+            <button id="save-proactive-settings-btn" class="btn-primary">Save Proactive Settings</button>
+            <span id="proactive-settings-status" class="status-message"></span>
+
+            <details style="margin-top: 1rem;">
+              <summary style="cursor: pointer; font-weight: 500; color: #0366d6;">How It Works</summary>
+              <div style="margin-top: 0.5rem; padding: 1rem; background-color: #f8f9fa; border-radius: 6px; font-size: 0.9em;">
+                <p><strong>The agent monitors:</strong></p>
+                <ul style="margin-left: 1.5rem; margin-bottom: 0.5rem;">
+                  <li>Your emails (via Gmail)</li>
+                  <li>System state (battery, etc.)</li>
+                  <li>Calendar events (when implemented)</li>
+                </ul>
+                <p><strong>It suggests helpful actions like:</strong></p>
+                <ul style="margin-left: 1.5rem; margin-bottom: 0.5rem;">
+                  <li>Reminders about important emails</li>
+                  <li>Charging your laptop when battery is low</li>
+                  <li>Preparing for upcoming meetings</li>
+                </ul>
+                <p><strong>Privacy:</strong> All monitoring happens locally. No data leaves your machine.</p>
+              </div>
+            </details>
+          </div>
+
+          <div class="model-section">
             <h3>Cloud API Keys</h3>
             <p>Configure API keys for cloud-based LLM providers.</p>
 
@@ -275,5 +341,6 @@
 
   <script src="app.js"></script>
   <script src="suggestions.js"></script>
+  <script src="proactive-settings.js"></script>
 </body>
 </html>

@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Dict, Any, List, Optional
 import httpx
 from notifications import NotificationManager
+from learning import LearningSystem
 
 logger = logging.getLogger(__name__)
 
@@ -56,6 +57,12 @@ class BackgroundMonitor:
         # Notification manager
         self.notifier = NotificationManager(electron_ipc_url)
 
+        # Learning system
+        self.learner = LearningSystem(mcp_url, inference_url, electron_ipc_url)
+
+        # Learning check counter (ask questions less frequently than suggestions)
+        self.check_count = 0
+
         logger.info(f"Background monitor initialized with {check_interval_minutes}min interval")
 
     async def run_forever(self):
@@ -92,10 +99,22 @@ class BackgroundMonitor:
 
                 if suggestions:
                     logger.info(f"Generated {len(suggestions)} suggestions")
-                    # Send notifications (to be implemented)
                     await self._notify_suggestions(suggestions)
                 else:
                     logger.info("No suggestions generated (agent decided nothing helpful right now)")
+
+                # Every 3rd check, consider asking a learning question
+                self.check_count += 1
+                if self.check_count % 3 == 0:
+                    logger.info("Checking if should ask learning question...")
+                    try:
+                        if await self.learner.should_ask_question():
+                            question = await self.learner.generate_question()
+                            if question:
+                                await self.learner.ask_question(question)
+                                logger.info(f"Asked learning question: {question}")
+                    except Exception as e:
+                        logger.error(f"Failed to ask learning question: {str(e)}")
 
                 logger.info("=== Proactive check complete ===")
 
