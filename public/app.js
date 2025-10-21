@@ -645,8 +645,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // Check connection status every 2 seconds
   connectionCheckInterval = setInterval(checkChatConnection, 2000);
 
-  // Auto-load last model after a short delay (let servers start)
-  setTimeout(autoLoadLastModel, 1500);
+  // Auto-load last model after letting servers fully start (3 seconds)
+  // The function itself has additional waits and checks
+  setTimeout(autoLoadLastModel, 3000);
 
   // Send proactive greeting after a short delay (let servers start)
   setTimeout(sendProactiveGreeting, 2000);
@@ -969,26 +970,35 @@ async function sendProactiveGreeting() {
 // Auto-load last model on startup
 async function autoLoadLastModel() {
   const lastModel = localStorage.getItem('lastModel');
-  
+
   if (!lastModel) {
-    console.log('No previous model found');
+    console.log('No previous model found in localStorage');
     return;
   }
 
-  console.log('Auto-loading last model:', lastModel);
+  console.log('Found last model in localStorage:', lastModel);
 
-  // Wait a bit for server to be ready
-  await new Promise(resolve => setTimeout(resolve, 1000));
+  // Wait longer for server to be ready (inference server can take time to start)
+  await new Promise(resolve => setTimeout(resolve, 2000));
 
-  // Check if server is responsive
+  // Check if server is responsive with a proper timeout using AbortController
   try {
-    const healthCheck = await fetch(`${API_BASE_URL}/health`, { timeout: 2000 });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3000);
+
+    const healthCheck = await fetch(`${API_BASE_URL}/health`, {
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
+
     if (!healthCheck.ok) {
-      console.log('Server not ready, skipping auto-load');
+      console.log('Server not ready (not OK), skipping auto-load');
       return;
     }
+
+    console.log('Server is ready, proceeding with auto-load');
   } catch (error) {
-    console.log('Server not ready, skipping auto-load');
+    console.log('Server not ready or timed out, skipping auto-load:', error.message);
     return;
   }
 
@@ -1017,6 +1027,11 @@ async function autoLoadLastModel() {
 
   // Load the model
   const statusEl = document.getElementById('load-status');
+  console.log('Attempting to auto-load model:', lastModel, 'with settings:', {
+    gpuMemory,
+    tensorParallel
+  });
+
   if (statusEl) {
     statusEl.textContent = 'Auto-loading last model...';
     statusEl.style.color = '#dcdcaa';
@@ -1034,13 +1049,16 @@ async function autoLoadLastModel() {
     });
 
     const data = await response.json();
+    console.log('Auto-load response:', data);
 
     if (response.ok) {
       if (statusEl) {
         statusEl.textContent = `Auto-loaded: ${lastModel}`;
         statusEl.style.color = '#4ec9b0';
       }
-      console.log('Successfully auto-loaded model:', lastModel);
+      console.log('✅ Successfully auto-loaded model:', lastModel);
+
+      // Update UI
       refreshModelsList();
       checkServerStatus();
     } else {
@@ -1048,13 +1066,13 @@ async function autoLoadLastModel() {
         statusEl.textContent = `Failed to auto-load: ${data.detail}`;
         statusEl.style.color = '#f48771';
       }
-      console.error('Failed to auto-load model:', data.detail);
+      console.error('❌ Failed to auto-load model:', data.detail);
     }
   } catch (error) {
     if (statusEl) {
       statusEl.textContent = 'Auto-load failed - server may still be starting';
       statusEl.style.color = '#f48771';
     }
-    console.error('Auto-load error:', error.message);
+    console.error('❌ Auto-load error:', error.message);
   }
 }
