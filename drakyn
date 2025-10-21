@@ -1,0 +1,4 @@
+#!/bin/bash
+# Drakyn CLI wrapper script
+
+python3 "$(dirname "$0")/src/cli/cli.py" "$@"

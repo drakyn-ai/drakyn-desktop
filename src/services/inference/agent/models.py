@@ -13,6 +13,7 @@ class Message(BaseModel):
     tool_call: Optional["ToolCall"] = None
     tool_result: Optional[Dict[str, Any]] = None
     name: Optional[str] = None  # Tool name for tool messages
+    tool_call_id: Optional[str] = None  # Tool call ID for Anthropic (required for tool role messages)
 
 
 class ToolCall(BaseModel):

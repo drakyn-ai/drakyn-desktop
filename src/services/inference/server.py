@@ -25,12 +25,42 @@ env_path = Path(__file__).parent / '.env'
 if env_path.exists():
     load_dotenv(env_path)
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s.%(msecs)03d - %(name)s - %(levelname)s - %(message)s',
+# Setup logging to both console and file
+from logging.handlers import RotatingFileHandler
+
+# Create logs directory
+logs_dir = Path(__file__).parent / 'logs'
+logs_dir.mkdir(exist_ok=True)
+
+# Configure root logger
+root_logger = logging.getLogger()
+root_logger.setLevel(logging.INFO)
+
+# Create formatter
+formatter = logging.Formatter(
+    '%(asctime)s.%(msecs)03d - %(name)s - %(levelname)s - %(message)s',
     datefmt='%H:%M:%S'
 )
+
+# Console handler (stdout)
+console_handler = logging.StreamHandler(sys.stdout)
+console_handler.setLevel(logging.INFO)
+console_handler.setFormatter(formatter)
+root_logger.addHandler(console_handler)
+
+# File handler with rotation (10MB max, keep 5 backups)
+file_handler = RotatingFileHandler(
+    logs_dir / 'inference_server.log',
+    maxBytes=10 * 1024 * 1024,  # 10MB
+    backupCount=5,
+    encoding='utf-8'
+)
+file_handler.setLevel(logging.INFO)
+file_handler.setFormatter(formatter)
+root_logger.addHandler(file_handler)
+
 logger = logging.getLogger(__name__)
+logger.info(f"Logging to console and {logs_dir / 'inference_server.log'}")
 
 # Configuration
 INFERENCE_ENGINE = os.getenv("INFERENCE_ENGINE", "vllm")
@@ -284,13 +314,26 @@ async def load_model(request: LoadModelRequest):
             }
 
         elif INFERENCE_ENGINE == "openai_compatible":
-            # For OpenAI-compatible servers, just set the model name
-            # The actual model loading happens on the external server
+            # For OpenAI-compatible servers or cloud models, just set the model name
             current_model = request.model_name_or_path
 
             # Save to .env for persistence
             save_model_to_env(current_model)
 
+            # Check if this is a cloud model
+            is_cloud_model = any(current_model.startswith(prefix) for prefix in ['claude-', 'gpt-', 'anthropic/', 'openai/', 'gemini-'])
+
+            if is_cloud_model:
+                # Cloud model - no need to check Ollama server
+                logger.info(f"Selected cloud model: {current_model}")
+                return {
+                    "status": "success",
+                    "model": request.model_name_or_path,
+                    "message": f"Cloud model '{request.model_name_or_path}' selected. Make sure API key is configured in Settings.",
+                    "is_cloud": True
+                }
+
+            # For local Ollama models, test the connection
             # Initialize OpenAI client if not already done
             if not openai_client:
                 openai_client = httpx.AsyncClient(base_url=OPENAI_COMPATIBLE_URL, timeout=60.0)
@@ -314,7 +357,8 @@ async def load_model(request: LoadModelRequest):
                         "status": "success",
                         "model": request.model_name_or_path,
                         "message": f"Connected to {OPENAI_COMPATIBLE_URL}. Model '{request.model_name_or_path}' {'found' if model_exists else 'will be used (not verified)'}. Available: {', '.join(available_models[:3])}{'...' if len(available_models) > 3 else ''}",
-                        "available_models": available_models
+                        "available_models": available_models,
+                        "is_cloud": False
                     }
                 else:
                     error_msg = f"Server returned status {response.status_code}: {response.text[:200]}"
@@ -480,16 +524,26 @@ async def agent_chat(request: AgentChatRequest):
     if not model_name:
         raise HTTPException(status_code=400, detail="No model specified or loaded")
 
-    # Determine model prefix based on inference engine
-    if INFERENCE_ENGINE == "vllm" and model_name in loaded_models:
+    # Determine model prefix based on model name and inference engine
+    # Cloud models (Anthropic, OpenAI, etc.) don't need prefixes
+    is_cloud_model = any(model_name.startswith(prefix) for prefix in ['claude-', 'gpt-', 'anthropic/', 'openai/', 'gemini-'])
+
+    if is_cloud_model:
+        # Cloud provider model - use as-is
+        agent_model = model_name
+        logger.info(f"Using cloud model: {agent_model}")
+    elif INFERENCE_ENGINE == "vllm" and model_name in loaded_models:
         # Local vLLM model
         agent_model = f"vllm/{model_name}"
+        logger.info(f"Using vLLM model: {agent_model}")
     elif INFERENCE_ENGINE == "openai_compatible":
-        # Ollama or other OpenAI-compatible server
+        # Local Ollama or other OpenAI-compatible server
         agent_model = f"ollama/{model_name}"
+        logger.info(f"Using Ollama model: {agent_model}")
     else:
-        # Cloud provider (openai/gpt-4, anthropic/claude, etc.)
+        # Fallback - use model name as-is
         agent_model = model_name
+        logger.info(f"Using model: {agent_model}")
 
     try:
         # Fetch available tools from MCP server

@@ -21,6 +21,8 @@ if env_path.exists():
 # Import tools
 from tools.files import FileSearchTool
 from tools.gmail import GmailTool
+from tools.web_search import WebSearchTool
+from tools.mcp_manager import MCPManagerTool
 
 # Setup logging to both console and file
 logs_dir = Path(__file__).parent / 'logs'
@@ -71,6 +73,8 @@ app.add_middleware(
 AVAILABLE_TOOLS = {
     "search_files": FileSearchTool,
     "gmail": GmailTool,
+    "web_search": WebSearchTool,
+    "mcp_manager": MCPManagerTool,
 }
 
 

@@ -110,24 +110,61 @@ npm run build:win    # Windows (NSIS installer, portable)
 npm run build:linux  # Linux (AppImage, DEB)
 ```
 
-## Features (Roadmap)
+## Features
 
-- [ ] Model management (download, load, unload)
+### Implemented ✓
+- ✅ Model management (load/switch models)
+- ✅ Chat interface with streaming responses
+- ✅ Tool integration via MCP
+- ✅ Gmail integration with browser-based OAuth
+- ✅ File search tool
+- ✅ Multi-provider support (vLLM, Ollama, OpenAI, Anthropic)
+- ✅ CLI interface
+
+### Roadmap
 - [ ] Multiple agent configurations
-- [ ] Chat interface with streaming responses
-- [ ] Tool integration via MCP
 - [ ] GPU/CPU selection
 - [ ] Conversation history
 - [ ] System resource monitoring
 - [ ] Import/export agent configs
 - [ ] Plugin system for custom tools
+- [ ] Multi-account Gmail support
+- [ ] Attachment handling
+- [ ] Calendar integration
 
 ## Technology Stack
 
 - **Frontend**: Electron, HTML/CSS/JavaScript
 - **Backend Services**: Python, FastAPI, Uvicorn
-- **Inference Engine**: vLLM (or SGLang)
+- **Inference Engine**: vLLM, Ollama, or cloud providers (OpenAI, Anthropic)
 - **Protocol**: Model Context Protocol (MCP)
+- **Agent Framework**: LiteLLM with custom orchestrator
+- **Integrations**: Gmail API with OAuth 2.0
+
+## Tool Integrations
+
+### Gmail
+Read, search, and send emails with browser-based OAuth authentication.
+
+**Setup:** See [Gmail Integration Guide](docs/GMAIL_INTEGRATION.md)
+
+**Usage:**
+```
+You: Read my latest email
+You: Find emails from john@example.com
+You: Send an email to jane@example.com saying "Hello!"
+```
+
+**First-time setup:** ~30 seconds (just sign in with Google)
+
+### File Search
+Search for files on your local system.
+
+**Usage:**
+```
+You: Find all Python files in my projects folder
+You: Search for documents modified this week
+```
 
 ## License
 

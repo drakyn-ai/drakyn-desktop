@@ -60,8 +60,17 @@
               <div class="form-group">
                 <label for="model-dropdown">Select Model:</label>
                 <select id="model-dropdown">
-                  <optgroup label="Popular Models">
+                  <optgroup label="Cloud Models (Require API Keys)">
                     <option value="">-- Select a model --</option>
+                    <option value="claude-sonnet-4-5">Claude Sonnet 4.5 (Latest, best for agents)</option>
+                    <option value="claude-haiku-4-5">Claude Haiku 4.5 (Fast & efficient)</option>
+                    <option value="claude-opus-4-1">Claude Opus 4.1 (Most capable)</option>
+                    <option value="claude-3-5-haiku-20241022">Claude 3.5 Haiku (Legacy)</option>
+                    <option value="gpt-4-turbo">GPT-4 Turbo</option>
+                    <option value="gpt-4">GPT-4</option>
+                    <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                  </optgroup>
+                  <optgroup label="Local Models (Ollama)">
                     <option value="qwen2.5-coder:3b">qwen2.5-coder:3b (Coding, 3B params)</option>
                     <option value="qwen2.5-coder:7b">qwen2.5-coder:7b (Coding, 7B params)</option>
                     <option value="qwen2.5:3b">qwen2.5:3b (General, 3B params)</option>
@@ -200,9 +209,50 @@
                   <li>Download the credentials JSON file</li>
                   <li>Upload it using the button above</li>
                 </ol>
-                <p style="margin-top: 0.5rem;">
-                  <a href="docs/GMAIL_SETUP.md" target="_blank" rel="noopener">View detailed setup guide</a>
-                </p>
+              </div>
+            </details>
+          </div>
+
+          <div class="model-section">
+            <h3>Cloud API Keys</h3>
+            <p>Configure API keys for cloud-based LLM providers.</p>
+
+            <div class="form-group">
+              <label for="anthropic-api-key">Anthropic API Key:</label>
+              <input type="password" id="anthropic-api-key" placeholder="sk-ant-..." />
+              <small>Get your API key from <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">Anthropic Console</a></small>
+            </div>
+
+            <div class="form-group">
+              <label for="openai-api-key">OpenAI API Key (Optional):</label>
+              <input type="password" id="openai-api-key" placeholder="sk-..." />
+              <small>Get your API key from <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">OpenAI Platform</a></small>
+            </div>
+
+            <button id="save-api-keys-btn" class="btn-primary">Save API Keys</button>
+            <span id="api-keys-status" class="status-message"></span>
+
+            <p style="margin-top: 1rem; font-size: 0.9em; color: #858585;">
+              <strong>Note:</strong> API keys are stored locally in .env file and never sent anywhere except to the respective API providers.<br>
+              After saving, restart the server and select a cloud model (e.g., claude-sonnet-4-5) in the Models page.
+            </p>
+
+            <details style="margin-top: 1rem;">
+              <summary style="cursor: pointer; font-weight: 500; color: #0366d6;">Available Models</summary>
+              <div style="margin-top: 0.5rem; padding: 1rem; background-color: #f8f9fa; border-radius: 6px; font-size: 0.9em;">
+                <p><strong>Anthropic (Claude) - Latest:</strong></p>
+                <ul style="margin-left: 1.5rem; margin-bottom: 1rem;">
+                  <li><code>claude-sonnet-4-5</code> - Latest Sonnet, best for agents and coding</li>
+                  <li><code>claude-haiku-4-5</code> - Fast and efficient</li>
+                  <li><code>claude-opus-4-1</code> - Most capable</li>
+                  <li><code>claude-3-5-haiku-20241022</code> - Legacy 3.5 Haiku</li>
+                </ul>
+                <p><strong>OpenAI (GPT):</strong></p>
+                <ul style="margin-left: 1.5rem;">
+                  <li><code>gpt-4-turbo</code> - Latest GPT-4 with 128k context</li>
+                  <li><code>gpt-4</code> - Standard GPT-4</li>
+                  <li><code>gpt-3.5-turbo</code> - Fast and cost-effective</li>
+                </ul>
               </div>
             </details>
           </div>

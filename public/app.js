@@ -100,6 +100,7 @@ async function sendMessage() {
       for (const line of lines) {
         if (line.startsWith('data: ')) {
           const data = JSON.parse(line.slice(6));
+          console.log('[Agent Step]', data);  // Debug logging
 
           if (data.type === 'thinking') {
             agentMessageDiv.innerHTML = `<em style="color: #6a737d;">Thinking (iteration ${data.iteration + 1})...</em>`;
@@ -114,6 +115,10 @@ async function sendMessage() {
             agentMessageDiv.innerHTML += `<br><code style="font-size: 0.85em; display: block; margin-top: 0.5rem; background-color: #f6f8fa; padding: 0.5rem; border-radius: 4px; color: #24292e;">${JSON.stringify(data.tool_args, null, 2)}</code>`;
           } else if (data.type === 'tool_result') {
             agentMessageDiv.innerHTML += `<br><em style="color: #28a745;">Tool result received</em>`;
+            // Log tool result for debugging
+            if (data.result) {
+              console.log('[Tool Result]', data.result);
+            }
           } else if (data.type === 'answer') {
             finalAnswer = data.content;
             agentMessageDiv.innerHTML = `<strong style="color: #24292e;">Agent:</strong> ${data.content}`;
@@ -121,12 +126,19 @@ async function sendMessage() {
             agentMessageDiv.innerHTML = `<strong style="color: #dc3545;">Error:</strong> ${data.error}`;
           } else if (data.type === 'done') {
             // Stream complete
+            console.log('[Agent] Stream complete, final answer:', finalAnswer);
             break;
           }
 
           chatMessages.scrollTop = chatMessages.scrollHeight;
         }
       }
+    }
+
+    // Check if we got any answer after stream completes
+    if (!finalAnswer && agentMessageDiv.innerHTML.includes('Thinking')) {
+      console.warn('[Agent] Stream ended but no final answer received');
+      agentMessageDiv.innerHTML = `<strong style="color: #dc3545;">Error:</strong> Agent did not provide a response. Check server logs for details.`;
     }
 
   } catch (error) {
@@ -710,3 +722,96 @@ const uploadGmailBtn = document.getElementById('upload-gmail-credentials-btn');
 if (uploadGmailBtn) {
   uploadGmailBtn.addEventListener('click', uploadGmailCredentials);
 }
+
+// API Keys Management
+async function saveAPIKeys() {
+  const anthropicKeyInput = document.getElementById('anthropic-api-key');
+  const openaiKeyInput = document.getElementById('openai-api-key');
+  const statusEl = document.getElementById('api-keys-status');
+
+  const anthropicKey = anthropicKeyInput.value.trim();
+  const openaiKey = openaiKeyInput.value.trim();
+
+  if (!anthropicKey && !openaiKey) {
+    statusEl.textContent = 'Please enter at least one API key';
+    statusEl.style.color = '#dc3545';
+    return;
+  }
+
+  // Save via Electron IPC
+  if (typeof window.electron !== 'undefined') {
+    try {
+      statusEl.textContent = 'Saving API keys...';
+      statusEl.style.color = '#0366d6';
+
+      const { ipcRenderer } = window.electron;
+      const config = {};
+
+      if (anthropicKey) {
+        config.anthropic_api_key = anthropicKey;
+      }
+      if (openaiKey) {
+        config.openai_api_key = openaiKey;
+      }
+
+      const result = await ipcRenderer.invoke('update-config', config);
+
+      if (result.success) {
+        statusEl.textContent = 'API keys saved! Restart the server to use cloud models.';
+        statusEl.style.color = '#28a745';
+
+        // Clear the inputs (they're in .env now)
+        anthropicKeyInput.value = '';
+        openaiKeyInput.value = '';
+      } else {
+        statusEl.textContent = `Failed: ${result.error}`;
+        statusEl.style.color = '#dc3545';
+      }
+    } catch (error) {
+      statusEl.textContent = `Error: ${error.message}`;
+      statusEl.style.color = '#dc3545';
+    }
+  } else {
+    statusEl.textContent = 'API keys can only be saved in Electron app';
+    statusEl.style.color = '#dc3545';
+  }
+}
+
+// Load API key status (not the keys themselves - security)
+async function loadAPIKeyStatus() {
+  if (typeof window.electron !== 'undefined') {
+    try {
+      const { ipcRenderer } = window.electron;
+      const config = await ipcRenderer.invoke('get-config');
+
+      const anthropicKeyInput = document.getElementById('anthropic-api-key');
+      const openaiKeyInput = document.getElementById('openai-api-key');
+
+      // Show placeholder if key exists (don't show actual key for security)
+      if (config.anthropic_api_key) {
+        anthropicKeyInput.placeholder = '••••••••••••••••••••••• (configured)';
+      }
+      if (config.openai_api_key) {
+        openaiKeyInput.placeholder = '••••••••••••••••••••••• (configured)';
+      }
+    } catch (error) {
+      console.error('Failed to load API key status:', error);
+    }
+  }
+}
+
+// Add event listener for API keys save
+const saveAPIKeysBtn = document.getElementById('save-api-keys-btn');
+if (saveAPIKeysBtn) {
+  saveAPIKeysBtn.addEventListener('click', saveAPIKeys);
+}
+
+// Load API key status when settings page loads
+document.querySelectorAll('.sidebar a').forEach(link => {
+  link.addEventListener('click', (e) => {
+    const page = e.target.dataset.page;
+    if (page === 'settings') {
+      setTimeout(() => loadAPIKeyStatus(), 100);
+    }
+  });
+});

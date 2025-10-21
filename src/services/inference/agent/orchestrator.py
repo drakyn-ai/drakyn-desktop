@@ -76,18 +76,29 @@ class AgentOrchestrator:
         """
         # Initialize conversation with system prompt and history
         messages = conversation_history or []
+        logger.info(f"[AGENT] Starting agent run with user message: {user_message[:100]}...")
 
         # Add system prompt if not already present
         if not messages or messages[0].role != "system":
             messages.insert(0, Message(role="system", content=self.system_prompt))
+            logger.info(f"[AGENT] Added system prompt ({len(self.system_prompt)} chars)")
 
         # Add user message
         messages.append(Message(role="user", content=user_message))
+        logger.info(f"[AGENT] Initial context has {len(messages)} messages")
 
         # Main reasoning loop
+        logger.info(f"[AGENT] Starting reasoning loop (max {self.config.max_iterations} iterations)")
         for iteration in range(self.config.max_iterations):
-            if self.config.verbose:
-                logger.info(f"Agent iteration {iteration + 1}/{self.config.max_iterations}")
+            logger.info(f"[AGENT] ========== Iteration {iteration + 1}/{self.config.max_iterations} ==========")
+            logger.info(f"[AGENT] Current context: {len(messages)} messages")
+
+            # Log the last few messages for context
+            if len(messages) > 1:
+                recent_msgs = messages[-3:] if len(messages) > 3 else messages[1:]  # Skip system prompt
+                for i, msg in enumerate(recent_msgs):
+                    content_preview = msg.content[:100] if msg.content else "<no content>"
+                    logger.info(f"[AGENT]   Message {len(messages) - len(recent_msgs) + i}: {msg.role} - {content_preview}...")
 
             # Step 1: Get model response
             yield AgentStep(type="thinking", iteration=iteration)
@@ -103,7 +114,10 @@ class AgentOrchestrator:
                 logger.info(f"_get_model_response completed in {elapsed_get_response:.2f}s")
 
                 # Always log the full model response for debugging
-                logger.info(f"Model response (iteration {iteration}): {response_text[:500]}...")
+                if not response_text or not response_text.strip():
+                    logger.warning(f"[AGENT] Model returned EMPTY response! Length: {len(response_text)}, repr: {repr(response_text)}")
+                else:
+                    logger.info(f"Model response (iteration {iteration}): {response_text[:500]}...")
 
                 if self.config.verbose:
                     logger.debug(f"Full model response: {response_text}")
@@ -124,7 +138,13 @@ class AgentOrchestrator:
 
                     # Step 3: Execute tool
                     try:
+                        logger.info(f"[AGENT] Executing tool: {tool_call.tool}")
                         tool_result = await self._execute_tool(tool_call)
+                        logger.info(f"[AGENT] Tool result: {json.dumps(tool_result, indent=2)[:500]}...")
+
+                        # Check if this is a setup_required response
+                        if isinstance(tool_result, dict) and tool_result.get("setup_required"):
+                            logger.info(f"[AGENT] Tool requires setup - agent should guide user")
 
                         yield AgentStep(
                             type="tool_result",
@@ -134,23 +154,33 @@ class AgentOrchestrator:
                         )
 
                         # Add to conversation context
-                        messages.append(Message(
+                        # Generate unique tool call ID for Anthropic
+                        import uuid
+                        tool_call_id = f"toolu_{uuid.uuid4().hex[:24]}"
+
+                        assistant_msg = Message(
                             role="assistant",
                             content=response_text,
                             tool_call=tool_call
-                        ))
-                        messages.append(Message(
+                        )
+                        tool_msg = Message(
                             role="tool",
                             name=tool_call.tool,
-                            content=json.dumps(tool_result)
-                        ))
+                            content=json.dumps(tool_result),
+                            tool_call_id=tool_call_id
+                        )
+                        messages.append(assistant_msg)
+                        messages.append(tool_msg)
+
+                        logger.info(f"[AGENT] Added tool call and result to context. Context now has {len(messages)} messages")
 
                         # Continue to next iteration with tool result
                         continue
 
                     except Exception as e:
                         error_msg = f"Tool execution failed: {str(e)}"
-                        logger.error(error_msg)
+                        logger.error(f"[AGENT] {error_msg}")
+                        logger.error(f"[AGENT] Exception type: {type(e).__name__}")
 
                         yield AgentStep(
                             type="error",
@@ -160,15 +190,17 @@ class AgentOrchestrator:
                         )
 
                         # Add error to context so model can recover
-                        messages.append(Message(
+                        error_msg_obj = Message(
                             role="tool",
                             name=tool_call.tool,
                             content=f"Error: {error_msg}"
-                        ))
+                        )
+                        messages.append(error_msg_obj)
+                        logger.info(f"[AGENT] Added error to context. Context now has {len(messages)} messages")
                         continue
                 else:
                     # No tool call - this is the final answer
-                    logger.info(f"Direct answer (no tool): {response_text[:200]}...")
+                    logger.info(f"[AGENT] Direct answer (no tool call): {response_text[:200]}...")
 
                     # Clean up response - remove common formatting artifacts
                     cleaned_response = response_text.strip()
@@ -177,6 +209,26 @@ class AgentOrchestrator:
                     cleaned_response = re.sub(r'^#{0,3}\s*(?:Assistant|User|System):\s*', '', cleaned_response, flags=re.IGNORECASE | re.MULTILINE)
                     cleaned_response = cleaned_response.strip()
 
+                    logger.info(f"[AGENT] Cleaned response: {cleaned_response[:200]}...")
+
+                    # Handle empty responses
+                    if not cleaned_response:
+                        logger.error(f"[AGENT] Model returned empty response after cleaning. This is a model capability issue.")
+                        error_message = (
+                            "I apologize, but I'm having trouble processing your request. "
+                            "The model I'm using (gpt-oss:20b) may not be suitable for this task. "
+                            "Please try:\n"
+                            "1. Using a different model in the Settings page\n"
+                            "2. Rephrasing your question\n"
+                            "3. Asking a simpler question"
+                        )
+                        yield AgentStep(
+                            type="error",
+                            iteration=iteration,
+                            error=error_message
+                        )
+                        break
+
                     yield AgentStep(
                         type="answer",
                         iteration=iteration,
@@ -184,12 +236,15 @@ class AgentOrchestrator:
                     )
 
                     # Add final message to history
-                    messages.append(Message(
+                    final_msg = Message(
                         role="assistant",
                         content=response_text
-                    ))
+                    )
+                    messages.append(final_msg)
+                    logger.info(f"[AGENT] Added final answer to context. Context now has {len(messages)} messages")
 
                     # Done!
+                    logger.info(f"[AGENT] Agent completed successfully after {iteration + 1} iteration(s)")
                     break
 
             except Exception as e:
@@ -320,7 +375,11 @@ class AgentOrchestrator:
         Raises:
             Exception: If tool execution fails
         """
+        logger.info(f"[MCP] Calling MCP server at {self.mcp_url}/execute")
+        logger.info(f"[MCP] Tool: {tool_call.tool}, Args: {json.dumps(tool_call.args)}")
+
         async with httpx.AsyncClient() as client:
+            start = time.time()
             response = await client.post(
                 f"{self.mcp_url}/execute",
                 json={
@@ -329,11 +388,31 @@ class AgentOrchestrator:
                 },
                 timeout=30.0
             )
+            elapsed = time.time() - start
+            logger.info(f"[MCP] HTTP request completed in {elapsed:.3f}s, status: {response.status_code}")
+
             response.raise_for_status()
 
             result = response.json()
+            logger.info(f"[MCP] Raw response from MCP: {json.dumps(result, indent=2)[:500]}...")
 
+            # Extract the actual tool result
+            tool_result = result.get("result", {})
+
+            # If there's an error but it's a setup_required error, return the full result
+            # so the agent can guide the user through setup
             if result.get("error"):
-                raise Exception(result["error"])
+                logger.warning(f"[MCP] Tool returned error: {result.get('error')}")
+                # Check if this is a setup_required error
+                if isinstance(tool_result, dict) and tool_result.get("setup_required"):
+                    logger.info(f"[MCP] This is a setup_required error - returning full result to agent")
+                    logger.info(f"[MCP] Setup instructions included: {bool(tool_result.get('instructions'))}")
+                    # Return the full result with setup instructions
+                    return tool_result
+                else:
+                    # Regular error - raise exception
+                    logger.error(f"[MCP] Regular error - raising exception")
+                    raise Exception(result["error"])
 
-            return result.get("result", {})
+            logger.info(f"[MCP] Returning successful result")
+            return tool_result

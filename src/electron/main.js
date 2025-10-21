@@ -196,140 +196,144 @@ function stopServices() {
   }
 }
 
-// IPC handlers for server status
-ipcMain.handle('get-server-status', async () => {
-  return {
-    inference: inferenceProcess && inferenceProcess.killed === false,
-    mcp: mcpProcess && mcpProcess.killed === false,
-    setupInProgress,
-    setupStatus
-  };
-});
+// Register IPC handlers - called after app is ready
+function setupIPCHandlers() {
+  // IPC handlers for server status
+  ipcMain.handle('get-server-status', async () => {
+    return {
+      inference: inferenceProcess && inferenceProcess.killed === false,
+      mcp: mcpProcess && mcpProcess.killed === false,
+      setupInProgress,
+      setupStatus
+    };
+  });
 
-ipcMain.handle('get-setup-status', async () => {
-  return {
-    setupInProgress,
-    status: setupStatus
-  };
-});
+  ipcMain.handle('get-setup-status', async () => {
+    return {
+      setupInProgress,
+      status: setupStatus
+    };
+  });
 
-// IPC handler to update .env configuration
-ipcMain.handle('update-config', async (event, config) => {
-  try {
-    const envPath = path.join(__dirname, '../services/inference/.env');
+  // IPC handler to update .env configuration
+  ipcMain.handle('update-config', async (event, config) => {
+    try {
+      const envPath = path.join(__dirname, '../services/inference/.env');
 
-    if (!fs.existsSync(envPath)) {
-      throw new Error('.env file not found');
-    }
-
-    // Read current .env file
-    let envContent = fs.readFileSync(envPath, 'utf8');
-    const lines = envContent.split('\n');
-
-    // Update the relevant lines
-    let engineUpdated = false;
-    let urlUpdated = false;
-    const newLines = [];
-
-    for (const line of lines) {
-      if (line.startsWith('INFERENCE_ENGINE=')) {
-        newLines.push(`INFERENCE_ENGINE=${config.inference_engine}`);
-        engineUpdated = true;
-      } else if (line.startsWith('OPENAI_COMPATIBLE_URL=')) {
-        newLines.push(`OPENAI_COMPATIBLE_URL=${config.openai_compatible_url}`);
-        urlUpdated = true;
-      } else {
-        newLines.push(line);
+      if (!fs.existsSync(envPath)) {
+        throw new Error('.env file not found');
       }
+
+      // Read current .env file
+      let envContent = fs.readFileSync(envPath, 'utf8');
+      const lines = envContent.split('\n');
+
+      // Update the relevant lines
+      let engineUpdated = false;
+      let urlUpdated = false;
+      const newLines = [];
+
+      for (const line of lines) {
+        if (line.startsWith('INFERENCE_ENGINE=')) {
+          newLines.push(`INFERENCE_ENGINE=${config.inference_engine}`);
+          engineUpdated = true;
+        } else if (line.startsWith('OPENAI_COMPATIBLE_URL=')) {
+          newLines.push(`OPENAI_COMPATIBLE_URL=${config.openai_compatible_url}`);
+          urlUpdated = true;
+        } else {
+          newLines.push(line);
+        }
+      }
+
+      // Add lines if they didn't exist
+      if (!engineUpdated) {
+        newLines.unshift(`INFERENCE_ENGINE=${config.inference_engine}`);
+      }
+      if (!urlUpdated) {
+        newLines.splice(1, 0, `OPENAI_COMPATIBLE_URL=${config.openai_compatible_url}`);
+      }
+
+      // Write back to file
+      fs.writeFileSync(envPath, newLines.join('\n'));
+
+      console.log('Configuration updated:', config);
+      return { success: true, message: 'Configuration updated successfully' };
+    } catch (error) {
+      console.error('Failed to update config:', error);
+      return { success: false, error: error.message };
     }
+  });
 
-    // Add lines if they didn't exist
-    if (!engineUpdated) {
-      newLines.unshift(`INFERENCE_ENGINE=${config.inference_engine}`);
-    }
-    if (!urlUpdated) {
-      newLines.splice(1, 0, `OPENAI_COMPATIBLE_URL=${config.openai_compatible_url}`);
-    }
+  // IPC handler to read current config
+  ipcMain.handle('get-config', async () => {
+    try {
+      const envPath = path.join(__dirname, '../services/inference/.env');
 
-    // Write back to file
-    fs.writeFileSync(envPath, newLines.join('\n'));
+      if (!fs.existsSync(envPath)) {
+        return {
+          inference_engine: 'vllm',
+          openai_compatible_url: 'http://localhost:11434'
+        };
+      }
 
-    console.log('Configuration updated:', config);
-    return { success: true, message: 'Configuration updated successfully' };
-  } catch (error) {
-    console.error('Failed to update config:', error);
-    return { success: false, error: error.message };
-  }
-});
+      const envContent = fs.readFileSync(envPath, 'utf8');
+      const lines = envContent.split('\n');
 
-// IPC handler to read current config
-ipcMain.handle('get-config', async () => {
-  try {
-    const envPath = path.join(__dirname, '../services/inference/.env');
+      const config = {
+        inference_engine: 'vllm',
+        openai_compatible_url: 'http://localhost:11434'
+      };
 
-    if (!fs.existsSync(envPath)) {
+      for (const line of lines) {
+        if (line.startsWith('INFERENCE_ENGINE=')) {
+          config.inference_engine = line.split('=')[1].trim();
+        } else if (line.startsWith('OPENAI_COMPATIBLE_URL=')) {
+          config.openai_compatible_url = line.split('=')[1].trim();
+        }
+      }
+
+      return config;
+    } catch (error) {
+      console.error('Failed to read config:', error);
       return {
         inference_engine: 'vllm',
         openai_compatible_url: 'http://localhost:11434'
       };
     }
+  });
 
-    const envContent = fs.readFileSync(envPath, 'utf8');
-    const lines = envContent.split('\n');
-
-    const config = {
-      inference_engine: 'vllm',
-      openai_compatible_url: 'http://localhost:11434'
-    };
-
-    for (const line of lines) {
-      if (line.startsWith('INFERENCE_ENGINE=')) {
-        config.inference_engine = line.split('=')[1].trim();
-      } else if (line.startsWith('OPENAI_COMPATIBLE_URL=')) {
-        config.openai_compatible_url = line.split('=')[1].trim();
-      }
+  // IPC handlers for manual server control
+  ipcMain.handle('start-inference-server', async () => {
+    if (inferenceProcess && inferenceProcess.killed === false) {
+      return { success: false, message: 'Server already running' };
     }
 
-    return config;
-  } catch (error) {
-    console.error('Failed to read config:', error);
-    return {
-      inference_engine: 'vllm',
-      openai_compatible_url: 'http://localhost:11434'
-    };
-  }
-});
+    try {
+      await startInferenceServer();
+      return { success: true, message: 'Server started' };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  });
 
-// IPC handlers for manual server control
-ipcMain.handle('start-inference-server', async () => {
-  if (inferenceProcess && inferenceProcess.killed === false) {
-    return { success: false, message: 'Server already running' };
-  }
+  ipcMain.handle('stop-inference-server', async () => {
+    if (!inferenceProcess || (inferenceProcess.killed !== false)) {
+      return { success: false, message: 'Server not running' };
+    }
 
-  try {
-    await startInferenceServer();
-    return { success: true, message: 'Server started' };
-  } catch (error) {
-    return { success: false, error: error.message };
-  }
-});
-
-ipcMain.handle('stop-inference-server', async () => {
-  if (!inferenceProcess || (inferenceProcess.killed !== false)) {
-    return { success: false, message: 'Server not running' };
-  }
-
-  try {
-    inferenceProcess.kill('SIGTERM');
-    inferenceProcess = null;
-    updateSetupStatus('Server stopped');
-    return { success: true, message: 'Server stopped' };
-  } catch (error) {
-    return { success: false, error: error.message };
-  }
-});
+    try {
+      inferenceProcess.kill('SIGTERM');
+      inferenceProcess = null;
+      updateSetupStatus('Server stopped');
+      return { success: true, message: 'Server stopped' };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  });
+}
 
 app.on('ready', () => {
+  setupIPCHandlers();
   createWindow();
   // Auto-start inference server (starts fast in openai_compatible mode)
   startInferenceServer();
