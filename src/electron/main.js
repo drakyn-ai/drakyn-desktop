@@ -6,6 +6,7 @@ const fs = require('fs');
 let mainWindow;
 let inferenceProcess;
 let mcpProcess;
+let monitorProcess;
 let setupInProgress = false;
 let setupStatus = 'Starting...';
 
@@ -183,6 +184,38 @@ function startMCPServer() {
   });
 }
 
+function startMonitorService() {
+  const servicePath = path.join(__dirname, '../services/monitor/service.py');
+
+  if (!fs.existsSync(servicePath)) {
+    console.log('Monitor service script not found, skipping...');
+    return;
+  }
+
+  const pythonCmd = getPythonExecutable();
+  console.log('Starting background monitor service with:', pythonCmd);
+
+  monitorProcess = spawn(pythonCmd, [servicePath], {
+    env: {
+      ...process.env,
+      CHECK_INTERVAL_MINUTES: '30'  // Check every 30 minutes
+    },
+    cwd: path.join(__dirname, '../services/monitor')
+  });
+
+  monitorProcess.stdout.on('data', (data) => {
+    console.log('[Monitor Service]:', data.toString());
+  });
+
+  monitorProcess.stderr.on('data', (data) => {
+    console.error('[Monitor Service Error]:', data.toString());
+  });
+
+  monitorProcess.on('close', (code) => {
+    console.log(`Monitor service exited with code ${code}`);
+  });
+}
+
 function stopServices() {
   if (inferenceProcess) {
     console.log('Stopping inference server...');
@@ -193,6 +226,11 @@ function stopServices() {
     console.log('Stopping MCP server...');
     mcpProcess.kill('SIGTERM');
     mcpProcess = null;
+  }
+  if (monitorProcess) {
+    console.log('Stopping monitor service...');
+    monitorProcess.kill('SIGTERM');
+    monitorProcess = null;
   }
 }
 
@@ -339,6 +377,8 @@ app.on('ready', () => {
   startInferenceServer();
   // Start MCP server for agent tools
   startMCPServer();
+  // Start background monitor service for proactive suggestions
+  startMonitorService();
 });
 
 app.on('window-all-closed', () => {

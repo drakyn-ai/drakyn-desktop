@@ -23,6 +23,7 @@ from tools.files import FileSearchTool
 from tools.gmail import GmailTool
 from tools.web_search import WebSearchTool
 from tools.mcp_manager import MCPManagerTool
+from tools.user_context import UserContextTool
 
 # Setup logging to both console and file
 logs_dir = Path(__file__).parent / 'logs'
@@ -75,6 +76,7 @@ AVAILABLE_TOOLS = {
     "gmail": GmailTool,
     "web_search": WebSearchTool,
     "mcp_manager": MCPManagerTool,
+    "user_context": UserContextTool,
 }
 
 
