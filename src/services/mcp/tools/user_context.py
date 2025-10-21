@@ -36,21 +36,17 @@ class UserContextTool:
         "Use 'read' to see what you currently know, 'update' to rewrite or append new information."
     )
 
-    def __init__(self):
-        # User data directory
-        self.user_dir = Path.home() / ".drakyn"
-        self.context_file = self.user_dir / "user_context.txt"
+    # Class-level paths
+    USER_DIR = Path.home() / ".drakyn"
+    CONTEXT_FILE = USER_DIR / "user_context.txt"
 
-        # Ensure directory exists
-        self.user_dir.mkdir(exist_ok=True)
+    @staticmethod
+    def _ensure_context_file():
+        """Ensure context file exists with template"""
+        UserContextTool.USER_DIR.mkdir(exist_ok=True)
 
-        # Initialize with template if file doesn't exist
-        if not self.context_file.exists():
-            self._create_initial_context()
-
-    def _create_initial_context(self):
-        """Create initial context file with template"""
-        template = """# User Context
+        if not UserContextTool.CONTEXT_FILE.exists():
+            template = """# User Context
 
 About the User:
 [The agent will learn about you as you interact]
@@ -73,7 +69,7 @@ Recent Context:
 Last updated: {timestamp}
 """.format(timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
 
-        self.context_file.write_text(template)
+            UserContextTool.CONTEXT_FILE.write_text(template)
 
     @staticmethod
     def get_schema() -> Dict[str, Any]:
@@ -99,7 +95,8 @@ Last updated: {timestamp}
             "required": ["action"]
         }
 
-    async def execute(self, args: Dict[str, Any]) -> Dict[str, Any]:
+    @staticmethod
+    async def execute(args: Dict[str, Any]) -> Dict[str, Any]:
         """
         Execute user context operation.
 
@@ -114,9 +111,9 @@ Last updated: {timestamp}
             validated = UserContextArgs(**args)
 
             if validated.action == "read":
-                return await self._read_context()
+                return await UserContextTool._read_context()
             elif validated.action == "update":
-                return await self._update_context(validated.content, validated.append)
+                return await UserContextTool._update_context(validated.content, validated.append)
             else:
                 return {
                     "error": f"Unknown action: {validated.action}",
@@ -129,30 +126,31 @@ Last updated: {timestamp}
                 "action": args.get("action", "unknown")
             }
 
-    async def _read_context(self) -> Dict[str, Any]:
+    @staticmethod
+    async def _read_context() -> Dict[str, Any]:
         """Read current user context"""
         try:
-            if not self.context_file.exists():
-                self._create_initial_context()
+            UserContextTool._ensure_context_file()
 
-            content = self.context_file.read_text()
+            content = UserContextTool.CONTEXT_FILE.read_text()
 
             return {
                 "action": "read",
                 "content": content,
-                "file_path": str(self.context_file),
+                "file_path": str(UserContextTool.CONTEXT_FILE),
                 "last_modified": datetime.fromtimestamp(
-                    self.context_file.stat().st_mtime
+                    UserContextTool.CONTEXT_FILE.stat().st_mtime
                 ).strftime("%Y-%m-%d %H:%M:%S")
             }
 
         except Exception as e:
             return {
                 "error": f"Failed to read user context: {str(e)}",
-                "file_path": str(self.context_file)
+                "file_path": str(UserContextTool.CONTEXT_FILE)
             }
 
-    async def _update_context(self, content: str, append: bool = False) -> Dict[str, Any]:
+    @staticmethod
+    async def _update_context(content: str, append: bool = False) -> Dict[str, Any]:
         """Update user context"""
         try:
             if not content:
@@ -162,13 +160,13 @@ Last updated: {timestamp}
                 }
 
             # Ensure directory exists
-            self.user_dir.mkdir(exist_ok=True)
+            UserContextTool._ensure_context_file()
 
             if append:
                 # Read existing content
                 existing = ""
-                if self.context_file.exists():
-                    existing = self.context_file.read_text()
+                if UserContextTool.CONTEXT_FILE.exists():
+                    existing = UserContextTool.CONTEXT_FILE.read_text()
 
                 # Append new content
                 new_content = existing + "\n\n" + content
@@ -179,13 +177,13 @@ Last updated: {timestamp}
                 new_content += f"\n\n---\nLast updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
 
             # Write to file
-            self.context_file.write_text(new_content)
+            UserContextTool.CONTEXT_FILE.write_text(new_content)
 
             return {
                 "action": "update",
                 "success": True,
                 "append": append,
-                "file_path": str(self.context_file),
+                "file_path": str(UserContextTool.CONTEXT_FILE),
                 "content_length": len(new_content),
                 "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             }
@@ -193,5 +191,5 @@ Last updated: {timestamp}
         except Exception as e:
             return {
                 "error": f"Failed to update user context: {str(e)}",
-                "file_path": str(self.context_file)
+                "file_path": str(UserContextTool.CONTEXT_FILE)
             }

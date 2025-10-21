@@ -231,7 +231,8 @@ Remember: Better to stay quiet than be annoying. Only suggest truly helpful thin
                     json={
                         "tool": "gmail",
                         "arguments": {
-                            "action": "get_recent_unread",
+                            "action": "search",
+                            "query": "is:unread",
                             "max_results": 5
                         }
                     }
@@ -377,15 +378,16 @@ Remember: Better to stay quiet than be annoying. Only suggest truly helpful thin
         try:
             context = await self._read_user_context()
 
-            # Parse quiet hours from context (simple string matching)
+            # Parse quiet hours from context (using regex for HH:MM - HH:MM pattern)
+            import re
             for line in context.split("\n"):
                 if "quiet hours:" in line.lower():
-                    # Try to extract time range
-                    if "-" in line:
-                        times = line.split("-")
-                        if len(times) == 2:
-                            preferences["quiet_hours_start"] = times[0].strip().split()[-1]
-                            preferences["quiet_hours_end"] = times[1].strip().split()[0]
+                    # Extract HH:MM - HH:MM pattern
+                    time_pattern = r'(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})'
+                    match = re.search(time_pattern, line)
+                    if match:
+                        preferences["quiet_hours_start"] = match.group(1)
+                        preferences["quiet_hours_end"] = match.group(2)
 
                 if "proactive" in line.lower() and "disabled" in line.lower():
                     preferences["enabled"] = False

@@ -32,11 +32,6 @@ class CalendarTool:
         "Useful for preparing for meetings and managing time."
     )
 
-    def __init__(self):
-        # TODO: Initialize Google Calendar API client
-        # For now, this is a placeholder
-        self.setup_required = True
-
     @staticmethod
     def get_schema() -> Dict[str, Any]:
         """Return JSON schema for this tool's parameters"""
@@ -62,7 +57,8 @@ class CalendarTool:
             "required": ["action"]
         }
 
-    async def execute(self, args: Dict[str, Any]) -> Dict[str, Any]:
+    @staticmethod
+    async def execute(args: Dict[str, Any]) -> Dict[str, Any]:
         """
         Execute calendar operation.
 
