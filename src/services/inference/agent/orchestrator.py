@@ -39,7 +39,8 @@ class AgentOrchestrator:
         model: str,
         tools: List[ToolDefinition],
         config: Optional[AgentConfig] = None,
-        mcp_url: str = "http://localhost:8001"
+        mcp_url: str = "http://localhost:8001",
+        project_context: Optional[Dict[str, Any]] = None
     ):
         """
         Initialize agent orchestrator.
@@ -49,14 +50,16 @@ class AgentOrchestrator:
             tools: List of available tools
             config: Agent configuration
             mcp_url: URL of MCP server for tool execution
+            project_context: Optional dict with current project info (id, name, summary, status)
         """
         self.model = model
         self.tools = tools
         self.config = config or AgentConfig()
         self.mcp_url = mcp_url
+        self.project_context = project_context
         self.system_prompt = (
             self.config.system_prompt or
-            get_system_prompt_with_tools(tools)
+            get_system_prompt_with_tools(tools, project_context)
         )
 
     async def run(

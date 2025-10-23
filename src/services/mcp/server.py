@@ -25,6 +25,7 @@ from tools.web_search import WebSearchTool
 from tools.mcp_manager import MCPManagerTool
 from tools.user_context import UserContextTool
 from tools.calendar import CalendarTool
+from tools.projects import ProjectTool
 
 # Setup logging to both console and file
 logs_dir = Path(__file__).parent / 'logs'
@@ -79,6 +80,7 @@ AVAILABLE_TOOLS = {
     "mcp_manager": MCPManagerTool,
     "user_context": UserContextTool,
     "calendar": CalendarTool,
+    "project_manager": ProjectTool,
 }
 
 

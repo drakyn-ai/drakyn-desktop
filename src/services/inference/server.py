@@ -483,6 +483,7 @@ class AgentChatRequest(BaseModel):
     conversation_history: Optional[List[Dict]] = None
     model: Optional[str] = None  # If not provided, uses current_model
     stream: bool = True
+    project_context: Optional[Dict] = None  # Current project info (id, name, summary, status)
 
 
 async def get_available_tools() -> List[ToolDefinition]:
@@ -566,7 +567,8 @@ async def agent_chat(request: AgentChatRequest):
             config=AgentConfig(
                 max_iterations=5,
                 verbose=True
-            )
+            ),
+            project_context=request.project_context
         )
 
         # Stream agent steps

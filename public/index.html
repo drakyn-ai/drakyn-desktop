@@ -3,9 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' http://127.0.0.1:* http://localhost:* http://cnguyen-desktop.local:*">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; connect-src 'self' http://127.0.0.1:* http://localhost:* http://cnguyen-desktop.local:*">
   <title>Drakyn</title>
   <link rel="stylesheet" href="styles.css">
+  <!-- Markdown parser -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <!-- HTML sanitizer for markdown output -->
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.11/dist/purify.min.js"></script>
 </head>
 <body>
   <div id="app">
@@ -14,7 +18,7 @@
         <img src="logo/logo-square.png" alt="Drakyn" class="logo">
         <div class="header-text">
           <h1>Drakyn</h1>
-          <p>Local AI Agent</p>
+          <p>Secure, customizable local AI on your terms</p>
         </div>
         <div id="suggestion-badge" class="suggestion-badge" style="display: none;">
           <span id="suggestion-count">0</span>
@@ -35,16 +39,20 @@
       <nav class="sidebar">
         <ul>
           <li><a href="#" data-page="chat">Chat</a></li>
-          <li><a href="#" data-page="agents">Agents</a></li>
+          <li><a href="#" data-page="projects">Projects</a></li>
+          <li><a href="#" data-page="capabilities">Capabilities</a></li>
+          <li><a href="#" data-page="automations">Automations</a></li>
           <li><a href="#" data-page="models">Models</a></li>
           <li><a href="#" data-page="settings">Settings</a></li>
         </ul>
       </nav>
-
       <div class="content">
         <div id="chat-page" class="page active">
           <div class="chat-header">
-            <h2>Chat with Agent</h2>
+            <div class="chat-title">
+              <h2>Work with Drakyn</h2>
+              <p class="chat-tagline">Secure, customizable help on any initiative.</p>
+            </div>
             <div class="status-container">
               <div class="connection-status">
                 <span id="connection-indicator" class="status-dot"></span>
@@ -52,10 +60,25 @@
               </div>
               <div class="agent-status">
                 <span id="agent-status-icon">😴</span>
-                <span id="agent-status-text">Agent idle</span>
+                <span id="agent-status-text">Drakyn idle</span>
               </div>
             </div>
           </div>
+
+          <div class="chat-project-toolbar">
+            <div class="toolbar-group">
+              <label for="active-project-select">Project</label>
+              <select id="active-project-select"></select>
+              <button id="quick-new-project-btn" class="btn-secondary small">New Project</button>
+            </div>
+            <div class="toolbar-meta">
+              <span id="chat-project-status" class="status-pill planning">🧭 Planning</span>
+              <span id="chat-project-updated" class="meta-pill">Updated just now</span>
+            </div>
+          </div>
+
+          <p id="chat-project-summary" class="chat-project-summary">Let Drakyn know what matters and it will keep everything organized for you.</p>
+
           <div id="chat-messages"></div>
           <div class="chat-input">
             <input type="text" id="message-input" placeholder="Type a message..." disabled>
@@ -63,9 +86,94 @@
           </div>
         </div>
 
-        <div id="agents-page" class="page">
-          <h2>Manage Agents</h2>
-          <p>Agent management coming soon...</p>
+        <div id="projects-page" class="page">
+          <div class="projects-header">
+            <div>
+              <h2>Your Projects</h2>
+              <p>Drakyn can spin up parallel workstreams and keep the context tidy. Create one manually or let the agent propose a new project when it makes sense.</p>
+            </div>
+            <button id="new-project-btn" class="btn-primary">New Project</button>
+          </div>
+
+          <div class="projects-layout">
+            <section class="projects-list-panel">
+              <div class="projects-list-header">
+                <h3>Active Projects</h3>
+                <p>Tap any project to check progress or jump back into the conversation.</p>
+              </div>
+              <div id="project-list" class="project-list"></div>
+            </section>
+            <section class="project-detail-panel">
+              <div class="project-detail-empty" id="project-detail-empty">
+                <h3>No project selected</h3>
+                <p>Choose a project to see its status, summary, and latest activity.</p>
+              </div>
+              <div class="project-detail" id="project-detail" style="display: none;">
+                <div class="project-detail-header">
+                  <div>
+                    <h3 id="active-project-title">Secure Workspace Setup</h3>
+                    <p id="active-project-summary">Hardening your local stack while keeping Drakyn tailored to your workflow.</p>
+                  </div>
+                  <div class="project-detail-controls">
+                    <label for="project-status-select">Status</label>
+                    <select id="project-status-select"></select>
+                    <span id="active-project-status" class="active-project-status status-pill planning">🧭 Planning</span>
+                  </div>
+                </div>
+                <div class="project-detail-meta">
+                  <span id="project-detail-updated" class="meta-pill">Updated just now</span>
+                </div>
+                <div class="project-detail-activity">
+                  <h4>Latest Activity</h4>
+                  <p id="active-project-activity">Ready when you are.</p>
+                </div>
+
+                <div class="project-agent-assessment" id="project-agent-assessment" style="display: none;">
+                  <div class="assessment-header">
+                    <h4>Agent Assessment</h4>
+                    <button id="analyze-status-btn" class="btn-secondary small">Update Status</button>
+                  </div>
+                  <div class="assessment-status">
+                    <span id="agent-status-badge" class="agent-status-badge">On Track</span>
+                    <span id="estimated-completion" class="meta-pill">Est: 2 days</span>
+                  </div>
+                  <p id="agent-summary" class="agent-summary">Everything is progressing smoothly.</p>
+                  <div id="blockers-section" style="display: none;">
+                    <h5>Blockers</h5>
+                    <p id="blockers-text"></p>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+        </div>
+
+        <div id="capabilities-page" class="page">
+          <div class="capabilities-header">
+            <div>
+              <h2>What Can Drakyn Do?</h2>
+              <p>Discover powerful capabilities. Connect more tools to unlock new possibilities.</p>
+            </div>
+            <div class="capabilities-stats">
+              <div class="stat-card">
+                <div class="stat-number" id="capabilities-unlocked">5</div>
+                <div class="stat-label">Unlocked</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-number" id="capabilities-total">12</div>
+                <div class="stat-label">Total Available</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="capabilities-grid" id="capabilities-grid">
+            <!-- Capabilities will be rendered here -->
+          </div>
+        </div>
+
+        <div id="automations-page" class="page">
+          <h2>Automation Control</h2>
+          <p>Curated automation libraries and background routines are on the way. Soon you'll be able to review, approve, and tailor every capability before Drakyn runs it.</p>
         </div>
 
         <div id="models-page" class="page">
@@ -232,7 +340,7 @@
           </div>
 
           <div class="model-section">
-            <h3>Proactive Agent</h3>
+            <h3>Proactive Drakyn</h3>
             <p>Configure background monitoring and proactive suggestions.</p>
 
             <div class="form-group">
@@ -240,7 +348,7 @@
                 <input type="checkbox" id="proactive-enabled" checked />
                 Enable proactive monitoring
               </label>
-              <small>Agent monitors your context and suggests helpful actions</small>
+              <small>Drakyn monitors your context and suggests helpful actions</small>
             </div>
 
             <div class="form-group">
