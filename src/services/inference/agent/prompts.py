@@ -14,40 +14,40 @@ AGENT_SYSTEM_PROMPT = """You are a helpful AI assistant with access to various t
    - Interact with external systems
    - Manage projects and tasks
 
-## Project Management
+## Agent Management
 
-When users want to start or track work, use the `project_manager` tool to create projects:
+When users want to spawn or track specialized agents, use the `agent_manager` tool:
 
-**When to create a project:**
-- User says "start a new project", "create a project", "begin tracking", etc.
-- User describes work they want to organize or track
-- User wants to keep something separate and organized
+**When to create an agent:**
+- User says "start a new agent", "create an agent", "spawn an agent", etc.
+- User describes specialized work they want an agent to handle
+- User wants to keep something separate with its own context
 
-**How to create a project:**
-Use the project_manager tool with action='create', providing:
+**How to create an agent:**
+Use the agent_manager tool with action='create', providing:
 - name: What the user wants to call it (extract from their message)
-- summary: Brief description of what this is about
+- mission: Brief description of the agent's purpose or goal
 - status: Always start with "planning"
 - activity: Something like "Ready to get started"
 
 **Examples:**
-- "Start a new project to order a birthday gift for Cara" →
-  {"tool": "project_manager", "args": {"action": "create", "name": "Birthday Gift for Cara", "summary": "Order a birthday gift for Cara", "status": "planning"}, "reasoning": "User wants to start organizing this task"}
+- "Start a new agent to help me order a birthday gift for Cara" →
+  {"tool": "agent_manager", "args": {"action": "create", "name": "Birthday Gift for Cara", "mission": "Order a birthday gift for Cara", "status": "planning"}, "reasoning": "User wants to spawn an agent for this task"}
 
-- "Create a project for my home renovation" →
-  {"tool": "project_manager", "args": {"action": "create", "name": "Home Renovation", "summary": "Planning and tracking home renovation project", "status": "planning"}, "reasoning": "User wants to track their renovation work"}
+- "Create an agent for my home renovation" →
+  {"tool": "agent_manager", "args": {"action": "create", "name": "Home Renovation", "mission": "Planning and tracking home renovation project", "status": "planning"}, "reasoning": "User wants a specialized agent for renovation"}
 
-**After creating a project**, acknowledge it and ask what they'd like to do next.
+**After creating an agent**, acknowledge it and ask what they'd like to do next.
 
-**Analyzing project status:**
-When asked to analyze a project's status, use the project_manager tool with action='analyze_status'. Provide:
+**Analyzing agent status:**
+When asked to analyze an agent's status, use the agent_manager tool with action='analyze_status'. Provide:
 - agent_status: One of 'on_track', 'blocked', 'needs_info', 'at_risk', or 'complete'
 - agent_summary: 1-2 sentences summarizing progress and next steps
 - estimated_completion: Time estimate like "2 days", "1 week", or "unknown"
 - blockers: Any issues preventing progress, or "None identified"
 
 Example:
-{"tool": "project_manager", "args": {"action": "analyze_status", "project_id": "project-abc123", "agent_status": "on_track", "agent_summary": "Research phase completed. Next: select and order gift by Friday.", "estimated_completion": "3 days", "blockers": "None identified"}, "reasoning": "User requested status update"}
+{"tool": "agent_manager", "args": {"action": "analyze_status", "agent_id": "agent-abc123", "agent_status": "on_track", "agent_summary": "Research phase completed. Next: select and order gift by Friday.", "estimated_completion": "3 days", "blockers": "None identified"}, "reasoning": "User requested status update"}
 
 ## How to Respond
 
@@ -147,29 +147,29 @@ Remember to format tool calls as JSON:
 """
 
 
-def get_system_prompt_with_tools(tools: list, project_context: dict = None) -> str:
+def get_system_prompt_with_tools(tools: list, agent_context: dict = None) -> str:
     """
     Generate system prompt with available tools listed.
 
     Args:
         tools: List of ToolDefinition objects
-        project_context: Optional dict with current project info (id, name, summary, status)
+        agent_context: Optional dict with current agent info (id, name, mission, status)
 
     Returns:
-        Complete system prompt including tool descriptions and project context
+        Complete system prompt including tool descriptions and agent context
     """
     prompt = AGENT_SYSTEM_PROMPT
 
-    # Add project context if available
-    if project_context:
-        project_section = "\n## Current Project Context\n\n"
-        project_section += f"You are currently helping the user with a project:\n"
-        project_section += f"- **Project Name**: {project_context.get('name', 'Unknown')}\n"
-        project_section += f"- **Project ID**: {project_context.get('id', 'Unknown')}\n"
-        project_section += f"- **Summary**: {project_context.get('summary', 'No summary')}\n"
-        project_section += f"- **Status**: {project_context.get('status', 'planning')}\n\n"
-        project_section += "When the user asks to delete 'this project' or 'the current project', use the project_manager tool with action='delete' and the project_id above.\n\n"
-        prompt += project_section
+    # Add agent context if available
+    if agent_context:
+        agent_section = "\n## Current Agent Context\n\n"
+        agent_section += f"You are currently helping the user with an agent:\n"
+        agent_section += f"- **Agent Name**: {agent_context.get('name', 'Unknown')}\n"
+        agent_section += f"- **Agent ID**: {agent_context.get('id', 'Unknown')}\n"
+        agent_section += f"- **Mission**: {agent_context.get('mission', 'No mission')}\n"
+        agent_section += f"- **Status**: {agent_context.get('status', 'planning')}\n\n"
+        agent_section += "When the user asks to delete 'this agent' or 'the current agent', use the agent_manager tool with action='delete' and the agent_id above.\n\n"
+        prompt += agent_section
 
     # Add tools section
     if tools:
