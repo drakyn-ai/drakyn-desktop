@@ -219,19 +219,49 @@ function startMonitorService() {
 }
 
 function stopServices() {
+  const killProcess = (proc, name) => {
+    if (!proc) return;
+
+    console.log(`Stopping ${name}...`);
+
+    // Try graceful shutdown first
+    try {
+      proc.kill('SIGTERM');
+
+      // Force kill after 2 seconds if still running
+      const forceKillTimer = setTimeout(() => {
+        if (proc && !proc.killed) {
+          console.log(`Force killing ${name}...`);
+          proc.kill('SIGKILL');
+        }
+      }, 2000);
+
+      // Clear timer if process exits naturally
+      proc.once('exit', () => {
+        clearTimeout(forceKillTimer);
+        console.log(`${name} stopped successfully`);
+      });
+    } catch (error) {
+      console.error(`Error stopping ${name}:`, error);
+      // Try force kill as fallback
+      try {
+        proc.kill('SIGKILL');
+      } catch (killError) {
+        console.error(`Could not force kill ${name}:`, killError);
+      }
+    }
+  };
+
   if (inferenceProcess) {
-    console.log('Stopping inference server...');
-    inferenceProcess.kill('SIGTERM');
+    killProcess(inferenceProcess, 'inference server');
     inferenceProcess = null;
   }
   if (mcpProcess) {
-    console.log('Stopping MCP server...');
-    mcpProcess.kill('SIGTERM');
+    killProcess(mcpProcess, 'MCP server');
     mcpProcess = null;
   }
   if (monitorProcess) {
-    console.log('Stopping monitor service...');
-    monitorProcess.kill('SIGTERM');
+    killProcess(monitorProcess, 'monitor service');
     monitorProcess = null;
   }
 }
@@ -400,12 +430,34 @@ app.on('activate', () => {
   }
 });
 
-app.on('before-quit', () => {
+app.on('before-quit', (event) => {
+  // Prevent quit until cleanup is done
+  event.preventDefault();
+
+  console.log('App closing, cleaning up...');
   stopServices();
 
   // Close IPC server
   if (ipcServer) {
     ipcServer.close();
     ipcServer = null;
+  }
+
+  // Give processes time to exit, then quit for real
+  setTimeout(() => {
+    app.exit(0);
+  }, 2500);
+});
+
+app.on('will-quit', () => {
+  // Final cleanup if processes are still running
+  if (inferenceProcess && !inferenceProcess.killed) {
+    try { inferenceProcess.kill('SIGKILL'); } catch (e) {}
+  }
+  if (mcpProcess && !mcpProcess.killed) {
+    try { mcpProcess.kill('SIGKILL'); } catch (e) {}
+  }
+  if (monitorProcess && !monitorProcess.killed) {
+    try { monitorProcess.kill('SIGKILL'); } catch (e) {}
   }
 });
