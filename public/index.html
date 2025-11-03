@@ -39,8 +39,8 @@
       <nav class="sidebar">
         <ul>
           <li><a href="#" data-page="chat">Chat</a></li>
-          <li><a href="#" data-page="projects">Projects</a></li>
-          <li><a href="#" data-page="capabilities">Capabilities</a></li>
+          <li><a href="#" data-page="agents">Agents</a></li>
+          <li><a href="#" data-page="recipes">Recipes</a></li>
           <li><a href="#" data-page="automations">Automations</a></li>
           <li><a href="#" data-page="models">Models</a></li>
           <li><a href="#" data-page="settings">Settings</a></li>
@@ -65,19 +65,19 @@
             </div>
           </div>
 
-          <div class="chat-project-toolbar">
+          <div class="chat-agent-toolbar">
             <div class="toolbar-group">
-              <label for="active-project-select">Project</label>
-              <select id="active-project-select"></select>
-              <button id="quick-new-project-btn" class="btn-secondary small">New Project</button>
+              <label for="active-agent-select">Agent</label>
+              <select id="active-agent-select"></select>
+              <button id="quick-new-agent-btn" class="btn-secondary small">+ New Agent</button>
             </div>
             <div class="toolbar-meta">
-              <span id="chat-project-status" class="status-pill planning">🧭 Planning</span>
-              <span id="chat-project-updated" class="meta-pill">Updated just now</span>
+              <span id="chat-agent-status" class="status-pill planning">🧭 Planning</span>
+              <span id="chat-agent-updated" class="meta-pill">Updated just now</span>
             </div>
           </div>
 
-          <p id="chat-project-summary" class="chat-project-summary">Let Drakyn know what matters and it will keep everything organized for you.</p>
+          <p id="chat-agent-mission" class="chat-agent-mission">Spawn specialized agents with different missions to help you accomplish tasks.</p>
 
           <div id="chat-messages"></div>
           <div class="chat-input">
@@ -86,51 +86,51 @@
           </div>
         </div>
 
-        <div id="projects-page" class="page">
-          <div class="projects-header">
+        <div id="agents-page" class="page">
+          <div class="agents-header">
             <div>
-              <h2>Your Projects</h2>
-              <p>Drakyn can spin up parallel workstreams and keep the context tidy. Create one manually or let the agent propose a new project when it makes sense.</p>
+              <h2>Your Agents</h2>
+              <p>Spawn specialized AI agents with different missions. Each agent maintains its own conversation and context.</p>
             </div>
-            <button id="new-project-btn" class="btn-primary">New Project</button>
+            <button id="new-agent-btn" class="btn-primary">+ New Agent</button>
           </div>
 
-          <div class="projects-layout">
-            <section class="projects-list-panel">
-              <div class="projects-list-header">
-                <h3>Active Projects</h3>
-                <p>Tap any project to check progress or jump back into the conversation.</p>
+          <div class="agents-layout">
+            <section class="agents-list-panel">
+              <div class="agents-list-header">
+                <h3>Active Agents</h3>
+                <p>Select an agent to continue your conversation with it.</p>
               </div>
-              <div id="project-list" class="project-list"></div>
+              <div id="agent-list" class="agent-list"></div>
             </section>
-            <section class="project-detail-panel">
-              <div class="project-detail-empty" id="project-detail-empty">
-                <h3>No project selected</h3>
-                <p>Choose a project to see its status, summary, and latest activity.</p>
+            <section class="agent-detail-panel">
+              <div class="agent-detail-empty" id="agent-detail-empty">
+                <h3>No agent selected</h3>
+                <p>Choose an agent to see its mission, status, and continue chatting.</p>
               </div>
-              <div class="project-detail" id="project-detail" style="display: none;">
-                <div class="project-detail-header">
+              <div class="agent-detail" id="agent-detail" style="display: none;">
+                <div class="agent-detail-header">
                   <div>
-                    <h3 id="active-project-title">Secure Workspace Setup</h3>
-                    <p id="active-project-summary">Hardening your local stack while keeping Drakyn tailored to your workflow.</p>
+                    <h3 id="active-agent-name">Research Assistant</h3>
+                    <p id="active-agent-mission" class="agent-mission">Help me research and summarize technical documentation</p>
                   </div>
-                  <div class="project-detail-controls">
-                    <label for="project-status-select">Status</label>
-                    <select id="project-status-select"></select>
-                    <span id="active-project-status" class="active-project-status status-pill planning">🧭 Planning</span>
+                  <div class="agent-detail-controls">
+                    <label for="agent-status-select">Status</label>
+                    <select id="agent-status-select"></select>
+                    <span id="active-agent-status" class="active-agent-status status-pill planning">🧭 Planning</span>
                   </div>
                 </div>
-                <div class="project-detail-meta">
-                  <span id="project-detail-updated" class="meta-pill">Updated just now</span>
+                <div class="agent-detail-meta">
+                  <span id="agent-detail-updated" class="meta-pill">Updated just now</span>
                 </div>
-                <div class="project-detail-activity">
+                <div class="agent-detail-activity">
                   <h4>Latest Activity</h4>
-                  <p id="active-project-activity">Ready when you are.</p>
+                  <p id="active-agent-activity">Ready when you are.</p>
                 </div>
 
-                <div class="project-agent-assessment" id="project-agent-assessment" style="display: none;">
+                <div class="agent-assessment" id="agent-assessment" style="display: none;">
                   <div class="assessment-header">
-                    <h4>Agent Assessment</h4>
+                    <h4>Self Assessment</h4>
                     <button id="analyze-status-btn" class="btn-secondary small">Update Status</button>
                   </div>
                   <div class="assessment-status">
@@ -148,26 +148,36 @@
           </div>
         </div>
 
-        <div id="capabilities-page" class="page">
-          <div class="capabilities-header">
+        <div id="recipes-page" class="page">
+          <div class="recipes-header">
             <div>
-              <h2>What Can Drakyn Do?</h2>
-              <p>Discover powerful capabilities. Connect more tools to unlock new possibilities.</p>
+              <h2>Agent Recipes</h2>
+              <p>Discover and share powerful AI agent workflows. Save your best prompts as recipes.</p>
             </div>
-            <div class="capabilities-stats">
-              <div class="stat-card">
-                <div class="stat-number" id="capabilities-unlocked">5</div>
-                <div class="stat-label">Unlocked</div>
-              </div>
-              <div class="stat-card">
-                <div class="stat-number" id="capabilities-total">12</div>
-                <div class="stat-label">Total Available</div>
-              </div>
+            <div class="recipes-actions">
+              <button id="create-recipe-btn" class="btn-primary">+ Create Recipe</button>
             </div>
           </div>
 
-          <div class="capabilities-grid" id="capabilities-grid">
-            <!-- Capabilities will be rendered here -->
+          <div class="recipes-notice">
+            🌐 <strong>Coming Soon:</strong> Global recipe sharing! For now, explore these curated examples.
+          </div>
+
+          <div class="recipes-tabs">
+            <button class="recipe-tab active" data-tab="discover">Discover</button>
+            <button class="recipe-tab" data-tab="my-recipes">My Recipes</button>
+          </div>
+
+          <div id="discover-tab" class="recipe-tab-content active">
+            <div class="recipes-grid" id="recipes-grid">
+              <!-- Recipes will be rendered here -->
+            </div>
+          </div>
+
+          <div id="my-recipes-tab" class="recipe-tab-content">
+            <div class="recipes-grid" id="my-recipes-grid">
+              <!-- User's recipes will be rendered here -->
+            </div>
           </div>
         </div>
 

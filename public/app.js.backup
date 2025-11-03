@@ -5,21 +5,21 @@ const messageInput = document.getElementById('message-input');
 const sendButton = document.getElementById('send-button');
 const chatMessages = document.getElementById('chat-messages');
 
-const projectListEl = document.getElementById('agent-list');
-const newAgentBtn = document.getElementById('new-agent-btn');
-const quickNewProjectBtn = document.getElementById('quick-new-agent-btn');
-const projectStatusSelect = document.getElementById('agent-status-select');
-const activeAgentSelect = document.getElementById('active-agent-select');
-const activeAgentTitle = document.getElementById('active-agent-title');
-const activeAgentMission = document.getElementById('active-agent-mission');
-const activeAgentStatus = document.getElementById('active-agent-status');
-const activeAgentActivity = document.getElementById('active-agent-activity');
-const projectDetailContainer = document.getElementById('agent-detail');
-const projectDetailEmpty = document.getElementById('agent-detail-empty');
-const projectDetailUpdatedEl = document.getElementById('agent-detail-updated');
-const chatProjectMissionEl = document.getElementById('chat-agent-mission');
-const chatProjectStatusEl = document.getElementById('chat-agent-status');
-const chatProjectUpdatedEl = document.getElementById('chat-agent-updated');
+const projectListEl = document.getElementById('project-list');
+const newProjectBtn = document.getElementById('new-project-btn');
+const quickNewProjectBtn = document.getElementById('quick-new-project-btn');
+const projectStatusSelect = document.getElementById('project-status-select');
+const activeProjectSelect = document.getElementById('active-project-select');
+const activeProjectTitle = document.getElementById('active-project-title');
+const activeProjectSummary = document.getElementById('active-project-summary');
+const activeProjectStatus = document.getElementById('active-project-status');
+const activeProjectActivity = document.getElementById('active-project-activity');
+const projectDetailContainer = document.getElementById('project-detail');
+const projectDetailEmpty = document.getElementById('project-detail-empty');
+const projectDetailUpdatedEl = document.getElementById('project-detail-updated');
+const chatProjectSummaryEl = document.getElementById('chat-project-summary');
+const chatProjectStatusEl = document.getElementById('chat-project-status');
+const chatProjectUpdatedEl = document.getElementById('chat-project-updated');
 
 const markdownAvailable = typeof marked !== 'undefined';
 
@@ -58,7 +58,7 @@ const PROJECT_STATUS_META = {
 
 const PROJECT_STATUS_SEQUENCE = ['planning', 'researching', 'building', 'review', 'complete'];
 
-const createProjectId = () => `agent-${Math.random().toString(36).slice(2, 10)}`;
+const createProjectId = () => `project-${Math.random().toString(36).slice(2, 10)}`;
 
 const formatRelativeTime = (timestamp) => {
   if (!timestamp) return 'Just now';
@@ -72,19 +72,19 @@ const formatRelativeTime = (timestamp) => {
 };
 
 const seedNow = Date.now();
-const agents = [
+const projects = [
   {
     id: createProjectId(),
     name: 'Personal HQ',
-    mission: 'Capture anything you want Drakyn to drive without leaving your desktop.',
+    summary: 'Capture anything you want Drakyn to drive without leaving your desktop.',
     status: 'planning',
     lastUpdated: seedNow,
     activity: 'Ready when you are.'
   }
 ];
 
-const agentConversations = new Map();
-let activeAgentId = agents.length ? agents[0].id : null;
+const projectConversations = new Map();
+let activeProjectId = projects.length ? projects[0].id : null;
 
 // Recipe System - Agent workflow templates
 const CURATED_RECIPES = [
@@ -98,7 +98,7 @@ const CURATED_RECIPES = [
     prompt: `Please give me my daily briefing:
 1. Check my calendar for today's meetings and appointments
 2. Summarize any unread emails from the past 24 hours
-3. Review any agent updates or blockers
+3. Review any project updates or blockers
 4. Suggest priorities for today based on deadlines and importance
 
 Present this in a clear, organized format.`,
@@ -115,7 +115,7 @@ Present this in a clear, organized format.`,
     prompt: `Help me triage my inbox:
 1. Show me all unread emails from the past 3 days
 2. Categorize them into: Urgent, Important, FYI, and Can Wait
-3. For urgent items, provide a brief mission and suggested actions
+3. For urgent items, provide a brief summary and suggested actions
 4. Identify any newsletters or automated emails that can be archived
 
 Help me get to inbox zero efficiently.`,
@@ -157,14 +157,14 @@ Help me get to inbox zero efficiently.`,
     tags: ['github', 'code-review', 'development']
   },
   {
-    id: 'agent-standup',
-    title: 'Agent Status Update',
-    description: 'Generate a comprehensive agent status report',
+    id: 'project-standup',
+    title: 'Project Status Update',
+    description: 'Generate a comprehensive project status report',
     author: 'Drakyn Team',
-    category: 'agent-management',
+    category: 'project-management',
     icon: '📊',
-    prompt: `Create a agent status update:
-1. Analyze the current agent status
+    prompt: `Create a project status update:
+1. Analyze the current project status
 2. List completed tasks since last update
 3. Identify any blockers or risks
 4. Estimate completion timeline
@@ -239,15 +239,15 @@ Tone: [TONE - professional/casual/technical]`,
 // User's personal recipes (stored in localStorage)
 let userRecipes = [];
 
-const getAgentById = (id) => agents.find(agent => agent.id === id);
+const getProjectById = (id) => projects.find(project => project.id === id);
 
-const ensureAgentConversation = (projectId) => {
-  if (!agentConversations.has(projectId)) {
+const ensureProjectConversation = (projectId) => {
+  if (!projectConversations.has(projectId)) {
     const container = document.createElement('div');
-    container.className = 'agent-conversation';
-    agentConversations.set(projectId, container);
+    container.className = 'project-conversation';
+    projectConversations.set(projectId, container);
   }
-  return agentConversations.get(projectId);
+  return projectConversations.get(projectId);
 };
 
 const getStatusMeta = (statusKey) => PROJECT_STATUS_META[statusKey] || PROJECT_STATUS_META.planning;
@@ -264,49 +264,49 @@ const applyStatusPill = (element, baseClass, statusKey) => {
 };
 
 const updateProjectSelectOptions = () => {
-  if (!activeAgentSelect) return;
+  if (!activeProjectSelect) return;
 
-  activeAgentSelect.innerHTML = '';
+  activeProjectSelect.innerHTML = '';
 
-  if (agents.length === 0) {
+  if (projects.length === 0) {
     const option = document.createElement('option');
     option.value = '';
     option.textContent = 'No projects yet';
-    activeAgentSelect.appendChild(option);
-    activeAgentSelect.disabled = true;
+    activeProjectSelect.appendChild(option);
+    activeProjectSelect.disabled = true;
     return;
   }
 
-  activeAgentSelect.disabled = false;
-  const sortedAgents = [...agents].sort((a, b) => b.lastUpdated - a.lastUpdated);
-  sortedAgents.forEach(project => {
+  activeProjectSelect.disabled = false;
+  const sortedProjects = [...projects].sort((a, b) => b.lastUpdated - a.lastUpdated);
+  sortedProjects.forEach(project => {
     const option = document.createElement('option');
     option.value = project.id;
     option.textContent = project.name;
-    activeAgentSelect.appendChild(option);
+    activeProjectSelect.appendChild(option);
   });
 
-  if (activeAgentId) {
-    activeAgentSelect.value = activeAgentId;
+  if (activeProjectId) {
+    activeProjectSelect.value = activeProjectId;
   }
 };
 
-function updateChatProjectMeta(agent) {
-  if (!chatProjectMissionEl || !chatProjectStatusEl || !chatProjectUpdatedEl) return;
+function updateChatProjectMeta(project) {
+  if (!chatProjectSummaryEl || !chatProjectStatusEl || !chatProjectUpdatedEl) return;
 
   if (!project) {
-    chatProjectMissionEl.textContent = 'Let Drakyn know what matters and it will keep everything organized for you.';
+    chatProjectSummaryEl.textContent = 'Let Drakyn know what matters and it will keep everything organized for you.';
     applyStatusPill(chatProjectStatusEl, '', 'planning');
-    chatProjectUpdatedEl.textContent = 'No agent selected';
+    chatProjectUpdatedEl.textContent = 'No project selected';
     return;
   }
 
-  chatProjectMissionEl.textContent = agent.mission || 'No mission yet — add a quick description in the Projects tab.';
-  applyStatusPill(chatProjectStatusEl, '', agent.status);
+  chatProjectSummaryEl.textContent = project.summary || 'No summary yet — add a quick description in the Projects tab.';
+  applyStatusPill(chatProjectStatusEl, '', project.status);
   chatProjectUpdatedEl.textContent = `Updated ${formatRelativeTime(project.lastUpdated)}`;
 }
 
-function showAgentDetail(agent) {
+function showProjectDetail(project) {
   if (!projectDetailContainer || !projectDetailEmpty) return;
 
   if (!project) {
@@ -318,18 +318,18 @@ function showAgentDetail(agent) {
   projectDetailEmpty.style.display = 'none';
   projectDetailContainer.style.display = 'block';
 
-  if (activeAgentTitle) {
-    activeAgentTitle.textContent = agent.name;
+  if (activeProjectTitle) {
+    activeProjectTitle.textContent = project.name;
   }
 
-  if (activeAgentMission) {
-    activeAgentMission.textContent = agent.mission;
+  if (activeProjectSummary) {
+    activeProjectSummary.textContent = project.summary;
   }
 
-  applyStatusPill(activeAgentStatus, 'active-agent-status', agent.status);
+  applyStatusPill(activeProjectStatus, 'active-project-status', project.status);
 
-  if (activeAgentActivity) {
-    activeAgentActivity.textContent = agent.activity || 'No updates yet — Drakyn is ready when you are.';
+  if (activeProjectActivity) {
+    activeProjectActivity.textContent = project.activity || 'No updates yet — Drakyn is ready when you are.';
   }
 
   if (projectDetailUpdatedEl) {
@@ -342,7 +342,7 @@ function showAgentDetail(agent) {
       const option = document.createElement('option');
       option.value = statusKey;
       option.textContent = PROJECT_STATUS_META[statusKey].label;
-      if (statusKey === agent.status) {
+      if (statusKey === project.status) {
         option.selected = true;
       }
       projectStatusSelect.appendChild(option);
@@ -350,8 +350,8 @@ function showAgentDetail(agent) {
   }
 
   // Show agent assessment if available
-  const assessmentContainer = document.getElementById('agent-agent-assessment');
-  if (assessmentContainer && agent.agent_status) {
+  const assessmentContainer = document.getElementById('project-agent-assessment');
+  if (assessmentContainer && project.agent_status) {
     assessmentContainer.style.display = 'block';
 
     // Update status badge
@@ -371,23 +371,23 @@ function showAgentDetail(agent) {
 
     // Update estimated completion
     const estimatedEl = document.getElementById('estimated-completion');
-    if (estimatedEl && agent.estimated_completion) {
+    if (estimatedEl && project.estimated_completion) {
       estimatedEl.textContent = `Est: ${project.estimated_completion}`;
       estimatedEl.style.display = 'inline-block';
     }
 
-    // Update agent mission
-    const missionEl = document.getElementById('agent-mission');
-    if (missionEl && agent.agent_mission) {
-      missionEl.textContent = agent.agent_mission;
+    // Update agent summary
+    const summaryEl = document.getElementById('agent-summary');
+    if (summaryEl && project.agent_summary) {
+      summaryEl.textContent = project.agent_summary;
     }
 
     // Update blockers if any
     const blockersSection = document.getElementById('blockers-section');
     const blockersText = document.getElementById('blockers-text');
-    if (blockersSection && blockersText && agent.blockers && agent.blockers !== 'None identified') {
+    if (blockersSection && blockersText && project.blockers && project.blockers !== 'None identified') {
       blockersSection.style.display = 'block';
-      blockersText.textContent = agent.blockers;
+      blockersText.textContent = project.blockers;
     } else if (blockersSection) {
       blockersSection.style.display = 'none';
     }
@@ -396,15 +396,15 @@ function showAgentDetail(agent) {
   }
 }
 
-function renderAgentList() {
+function renderProjectList() {
   if (!projectListEl) return;
 
   const previousScroll = projectListEl.scrollTop;
   projectListEl.innerHTML = '';
 
-  if (agents.length === 0) {
+  if (projects.length === 0) {
     const emptyState = document.createElement('div');
-    emptyState.className = 'agent-empty-state';
+    emptyState.className = 'project-empty-state';
     emptyState.innerHTML = `
       <h4>No projects yet</h4>
       <p>Spin up a dedicated workspace and Drakyn will keep everything organized for you.</p>
@@ -414,46 +414,46 @@ function renderAgentList() {
     return;
   }
 
-  const sortedAgents = [...agents].sort((a, b) => b.lastUpdated - a.lastUpdated);
+  const sortedProjects = [...projects].sort((a, b) => b.lastUpdated - a.lastUpdated);
 
-  sortedAgents.forEach(project => {
+  sortedProjects.forEach(project => {
     const item = document.createElement('button');
     item.type = 'button';
-    item.className = 'agent-item';
+    item.className = 'project-item';
     item.dataset.projectId = project.id;
-    if (project.id === activeAgentId) {
+    if (project.id === activeProjectId) {
       item.classList.add('active');
     }
 
     const header = document.createElement('div');
-    header.className = 'agent-item-header';
+    header.className = 'project-item-header';
 
     const nameEl = document.createElement('span');
-    nameEl.className = 'agent-item-name';
+    nameEl.className = 'project-item-name';
     nameEl.textContent = project.name;
     header.appendChild(nameEl);
 
     const statusBadge = document.createElement('span');
-    applyStatusPill(statusBadge, 'agent-status-badge', project.status);
+    applyStatusPill(statusBadge, 'project-status-badge', project.status);
     header.appendChild(statusBadge);
 
     item.appendChild(header);
 
-    const mission = document.createElement('p');
-    mission.className = 'agent-item-mission';
-    mission.textContent = project.mission;
-    item.appendChild(mission);
+    const summary = document.createElement('p');
+    summary.className = 'project-item-summary';
+    summary.textContent = project.summary;
+    item.appendChild(summary);
 
     const footer = document.createElement('div');
-    footer.className = 'agent-item-footer';
+    footer.className = 'project-item-footer';
 
     const activity = document.createElement('span');
-    activity.className = 'agent-activity';
+    activity.className = 'project-activity';
     activity.textContent = project.activity || 'Awaiting updates';
     footer.appendChild(activity);
 
     const timestamp = document.createElement('span');
-    timestamp.className = 'agent-timestamp';
+    timestamp.className = 'project-timestamp';
     timestamp.textContent = formatRelativeTime(project.lastUpdated);
     footer.appendChild(timestamp);
 
@@ -468,12 +468,12 @@ function renderAgentList() {
 }
 
 function setActiveProject(projectId, options = {}) {
-  const project = getAgentById(projectId);
+  const project = getProjectById(projectId);
   if (!project) return;
 
-  activeAgentId = projectId;
+  activeProjectId = projectId;
 
-  const projectContainer = ensureAgentConversation(projectId);
+  const projectContainer = ensureProjectConversation(projectId);
   if (chatMessages.firstElementChild !== projectContainer) {
     chatMessages.innerHTML = '';
     chatMessages.appendChild(projectContainer);
@@ -485,19 +485,19 @@ function setActiveProject(projectId, options = {}) {
   }
 
   updateChatProjectMeta(project);
-  showAgentDetail(project);
+  showProjectDetail(project);
 
-  if (activeAgentSelect && !options.skipSelectUpdate) {
-    activeAgentSelect.value = projectId;
+  if (activeProjectSelect && !options.skipSelectUpdate) {
+    activeProjectSelect.value = projectId;
   }
 
   if (!options.skipListUpdate) {
-    renderAgentList();
+    renderProjectList();
   }
 }
 
-function updateAgentActivity(projectId, speaker, text) {
-  const project = getAgentById(projectId);
+function updateProjectActivity(projectId, speaker, text) {
+  const project = getProjectById(projectId);
   if (!project) return;
 
   const cleanSpeaker = speaker || 'Update';
@@ -507,19 +507,19 @@ function updateAgentActivity(projectId, speaker, text) {
   project.activity = truncated ? `${cleanSpeaker}: ${truncated}` : `${cleanSpeaker} shared an update`;
   project.lastUpdated = Date.now();
 
-  if (projectId === activeAgentId) {
-    if (activeAgentActivity) {
-      activeAgentActivity.textContent = project.activity;
+  if (projectId === activeProjectId) {
+    if (activeProjectActivity) {
+      activeProjectActivity.textContent = project.activity;
     }
     updateChatProjectMeta(project);
-    showAgentDetail(project);
+    showProjectDetail(project);
   }
 
-  renderAgentList();
+  renderProjectList();
 }
 
 function handleProjectStatusChange(event) {
-  const project = getAgentById(activeAgentId);
+  const project = getProjectById(activeProjectId);
   if (!project) return;
 
   const nextStatus = event.target.value;
@@ -530,48 +530,48 @@ function handleProjectStatusChange(event) {
   project.lastUpdated = Date.now();
 
   updateChatProjectMeta(project);
-  showAgentDetail(project);
-  renderAgentList();
+  showProjectDetail(project);
+  renderProjectList();
 }
 
-const createAgent = ({ name, mission, status = 'planning', activity = 'Ready when you are.' } = {}) => {
-  const newAgent = {
+const createProject = ({ name, summary, status = 'planning', activity = 'Ready when you are.' } = {}) => {
+  const newProject = {
     id: createProjectId(),
     name: name && name.trim() ? name.trim() : 'Untitled Project',
-    mission: mission && mission.trim() ? mission.trim() : 'Outline the goals and guardrails for this initiative.',
+    summary: summary && summary.trim() ? summary.trim() : 'Outline the goals and guardrails for this initiative.',
     status: PROJECT_STATUS_META[status] ? status : 'planning',
     lastUpdated: Date.now(),
     activity: activity && activity.trim() ? activity.trim() : 'Ready when you are.'
   };
 
-  agents.unshift(newAgent);
-  ensureAgentConversation(newAgent.id);
+  projects.unshift(newProject);
+  ensureProjectConversation(newProject.id);
   updateProjectSelectOptions();
-  setActiveProject(newAgent.id, { skipListUpdate: true, skipSelectUpdate: true });
-  renderAgentList();
-  if (activeAgentSelect) {
-    activeAgentSelect.value = newAgent.id;
+  setActiveProject(newProject.id, { skipListUpdate: true, skipSelectUpdate: true });
+  renderProjectList();
+  if (activeProjectSelect) {
+    activeProjectSelect.value = newProject.id;
   }
-  updateChatProjectMeta(newAgent);
-  showAgentDetail(newAgent);
-  return newAgent;
+  updateChatProjectMeta(newProject);
+  showProjectDetail(newProject);
+  return newProject;
 };
 
-const handleNewAgent = () => {
+const handleNewProject = () => {
   const nameInput = prompt('What would you like to call this project?');
   if (nameInput === null) return;
 
-  const missionInput = prompt('How should Drakyn help you here?', 'Outline the goals and guardrails for this initiative.');
+  const summaryInput = prompt('How should Drakyn help you here?', 'Outline the goals and guardrails for this initiative.');
   createProject({
     name: nameInput,
-    mission: missionInput
+    summary: summaryInput
   });
 };
 
-async function analyzeAgentStatus() {
-  const project = getAgentById(activeAgentId);
+async function analyzeProjectStatus() {
+  const project = getProjectById(activeProjectId);
   if (!project) {
-    alert('No active agent selected');
+    alert('No active project selected');
     return;
   }
 
@@ -583,28 +583,28 @@ async function analyzeAgentStatus() {
   }
 
   try {
-    // Get current agent context including conversation history
-    const projectContainer = ensureAgentConversation(activeAgentId);
+    // Get current project context including conversation history
+    const projectContainer = ensureProjectConversation(activeProjectId);
     const messages = Array.from(projectContainer.querySelectorAll('.chat-message'));
-    const conversationMission = messages.slice(-10).map(msg => {
+    const conversationSummary = messages.slice(-10).map(msg => {
       const role = msg.classList.contains('user-message') ? 'User' : 'Drakyn';
       const content = msg.querySelector('.message-content')?.textContent || '';
       return `${role}: ${content.substring(0, 200)}`;
     }).join('\n');
 
     // Build analysis prompt
-    const analysisPrompt = `Please analyze the current status of this agent and provide:
+    const analysisPrompt = `Please analyze the current status of this project and provide:
 1. Status assessment (choose one: on_track, blocked, needs_info, at_risk, or complete)
-2. A brief mission (1-2 sentences) of what's been done and what's next
+2. A brief summary (1-2 sentences) of what's been done and what's next
 3. Estimated time to completion (e.g., "2 days", "1 week", "unknown")
 4. Any blockers preventing progress (or "None identified")
 
 Project: ${project.name}
-Mission: ${project.mission}
+Summary: ${project.summary}
 Current Status: ${project.status}
 
 Recent conversation:
-${conversationMission}
+${conversationSummary}
 
 Use the project_manager tool with action='analyze_status' to save your assessment.`;
 
@@ -618,7 +618,7 @@ Use the project_manager tool with action='analyze_status' to save your assessmen
         project_context: {
           id: project.id,
           name: project.name,
-          mission: project.mission,
+          summary: project.summary,
           status: project.status
         }
       })
@@ -631,10 +631,10 @@ Use the project_manager tool with action='analyze_status' to save your assessmen
     const data = await response.json();
     console.log('[Analysis Response]', data);
 
-    // The UI will be updated automatically through the update_agent ui_action
+    // The UI will be updated automatically through the update_project ui_action
 
   } catch (error) {
-    console.error('Failed to analyze agent status:', error);
+    console.error('Failed to analyze project status:', error);
     alert(`Failed to analyze project: ${error.message}`);
   } finally {
     // Reset button state
@@ -645,28 +645,28 @@ Use the project_manager tool with action='analyze_status' to save your assessmen
   }
 }
 
-const initializeAgentWorkspace = () => {
-  agents.forEach(agent => ensureAgentConversation(project.id));
+const initializeProjectWorkspace = () => {
+  projects.forEach(project => ensureProjectConversation(project.id));
 
-  if (!activeAgentId && agents.length) {
-    activeAgentId = agents[0].id;
+  if (!activeProjectId && projects.length) {
+    activeProjectId = projects[0].id;
   }
 
   updateProjectSelectOptions();
 
-  const initialAgent = getAgentById(activeAgentId);
+  const initialProject = getProjectById(activeProjectId);
   if (initialProject) {
     setActiveProject(initialProject.id, { skipListUpdate: true, skipSelectUpdate: true });
-    renderAgentList();
+    renderProjectList();
   } else {
-    renderAgentList();
+    renderProjectList();
     updateChatProjectMeta(null);
-    showAgentDetail(null);
+    showProjectDetail(null);
   }
 
-  if (newAgentBtn && !newAgentBtn.dataset.bound) {
-    newAgentBtn.addEventListener('click', handleNewProject);
-    newAgentBtn.dataset.bound = 'true';
+  if (newProjectBtn && !newProjectBtn.dataset.bound) {
+    newProjectBtn.addEventListener('click', handleNewProject);
+    newProjectBtn.dataset.bound = 'true';
   }
 
   if (quickNewProjectBtn && !quickNewProjectBtn.dataset.bound) {
@@ -679,38 +679,38 @@ const initializeAgentWorkspace = () => {
     projectStatusSelect.dataset.bound = 'true';
   }
 
-  if (activeAgentSelect && !activeAgentSelect.dataset.bound) {
-    activeAgentSelect.addEventListener('change', (event) => {
+  if (activeProjectSelect && !activeProjectSelect.dataset.bound) {
+    activeProjectSelect.addEventListener('change', (event) => {
       const nextProjectId = event.target.value;
       if (nextProjectId) {
         setActiveProject(nextProjectId);
       }
     });
-    activeAgentSelect.dataset.bound = 'true';
+    activeProjectSelect.dataset.bound = 'true';
   }
 };
 
 if (typeof window !== 'undefined') {
   window.DrakynProjects = {
-    createProjectFromAgent: ({ name, mission, status, activity } = {}) => createProject({ name, mission, status, activity }),
+    createProjectFromAgent: ({ name, summary, status, activity } = {}) => createProject({ name, summary, status, activity }),
     setActiveProject: (projectId) => setActiveProject(projectId),
-    listProjects: () => agents.map(agent => ({ ...agent })),
-    updateAgentActivity: (projectId, speaker, text) => updateAgentActivity(projectId, speaker, text)
+    listProjects: () => projects.map(project => ({ ...project })),
+    updateProjectActivity: (projectId, speaker, text) => updateProjectActivity(projectId, speaker, text)
   };
 }
 
-function addMessage(text, isUser = true, projectId = activeAgentId) {
-  const fallbackProjectId = agents.length ? agents[0].id : null;
-  const targetProjectId = projectId || activeAgentId || fallbackProjectId;
+function addMessage(text, isUser = true, projectId = activeProjectId) {
+  const fallbackProjectId = projects.length ? projects[0].id : null;
+  const targetProjectId = projectId || activeProjectId || fallbackProjectId;
   if (!targetProjectId) {
     return { messageDiv: null, content: null };
   }
 
-  if (targetProjectId !== activeAgentId) {
+  if (targetProjectId !== activeProjectId) {
     setActiveProject(targetProjectId, { skipListUpdate: false, skipSelectUpdate: false });
   }
 
-  const projectContainer = ensureAgentConversation(targetProjectId);
+  const projectContainer = ensureProjectConversation(targetProjectId);
 
   const messageDiv = document.createElement('div');
   messageDiv.className = 'chat-message';
@@ -749,8 +749,8 @@ async function sendMessage() {
   const message = messageInput.value.trim();
   if (!message) return;
 
-  addMessage(message, true, activeAgentId);
-  updateAgentActivity(activeAgentId, 'You', message);
+  addMessage(message, true, activeProjectId);
+  updateProjectActivity(activeProjectId, 'You', message);
   messageInput.value = '';
 
   // Disable input while processing
@@ -772,7 +772,7 @@ async function sendMessage() {
   content.className = 'message-content';
   agentMessageDiv.appendChild(content);
 
-  const projectContainer = ensureAgentConversation(activeAgentId);
+  const projectContainer = ensureProjectConversation(activeProjectId);
   if (chatMessages.firstElementChild !== projectContainer) {
     chatMessages.innerHTML = '';
     chatMessages.appendChild(projectContainer);
@@ -780,12 +780,12 @@ async function sendMessage() {
   projectContainer.appendChild(agentMessageDiv);
 
   try {
-    // Get current agent context
-    const currentAgent = getAgentById(activeAgentId);
-    const projectContext = currentAgent ? {
+    // Get current project context
+    const currentProject = getProjectById(activeProjectId);
+    const projectContext = currentProject ? {
       id: currentProject.id,
       name: currentProject.name,
-      mission: currentProject.mission,
+      summary: currentProject.summary,
       status: currentProject.status
     } : null;
 
@@ -885,52 +885,52 @@ async function sendMessage() {
                 console.log('[UI Action]', uiAction);
 
                 if (uiAction.type === 'create_project' && uiAction.project) {
-                  // Create agent in UI
-                  const agent = uiAction.project;
+                  // Create project in UI
+                  const project = uiAction.project;
                   if (window.DrakynProjects && window.DrakynProjects.createProjectFromAgent) {
                     window.DrakynProjects.createProjectFromAgent({
                       name: project.name,
-                      mission: project.mission,
+                      summary: project.summary,
                       status: project.status,
                       activity: project.activity
                     });
-                    console.log('[UI] Created agent in UI:', project.name);
+                    console.log('[UI] Created project in UI:', project.name);
                   }
                 } else if (uiAction.type === 'update_project' && uiAction.project) {
-                  // Update agent in UI
-                  const projectIndex = agents.findIndex(p => p.id === uiAction.project.id);
+                  // Update project in UI
+                  const projectIndex = projects.findIndex(p => p.id === uiAction.project.id);
                   if (projectIndex !== -1) {
                     // Merge updated fields
-                    agents[projectIndex] = { ...agents[projectIndex], ...uiAction.agent };
-                    console.log('[UI] Updated agent in UI:', uiAction.project.name);
+                    projects[projectIndex] = { ...projects[projectIndex], ...uiAction.project };
+                    console.log('[UI] Updated project in UI:', uiAction.project.name);
 
                     // Refresh UI
-                    if (activeAgentId === uiAction.project.id) {
-                      showAgentDetail(agents[projectIndex]);
+                    if (activeProjectId === uiAction.project.id) {
+                      showProjectDetail(projects[projectIndex]);
                     }
-                    renderAgentList();
+                    renderProjectList();
                   }
                 } else if (uiAction.type === 'delete_project' && uiAction.project_id) {
-                  // Delete agent from UI
-                  const projectIndex = agents.findIndex(p => p.id === uiAction.project_id);
+                  // Delete project from UI
+                  const projectIndex = projects.findIndex(p => p.id === uiAction.project_id);
                   if (projectIndex !== -1) {
-                    const deletedAgent = agents[projectIndex];
-                    agents.splice(projectIndex, 1);
-                    console.log('[UI] Deleted agent from UI:', deletedProject.name);
+                    const deletedProject = projects[projectIndex];
+                    projects.splice(projectIndex, 1);
+                    console.log('[UI] Deleted project from UI:', deletedProject.name);
 
-                    // Switch to new active agent or first available
+                    // Switch to new active project or first available
                     if (uiAction.new_active_project_id) {
                       setActiveProject(uiAction.new_active_project_id);
-                    } else if (agents.length > 0) {
-                      setActiveProject(agents[0].id);
+                    } else if (projects.length > 0) {
+                      setActiveProject(projects[0].id);
                     } else {
                       // No projects left
-                      activeAgentId = null;
+                      activeProjectId = null;
                       updateProjectSelectOptions();
                       updateChatProjectMeta(null);
-                      showAgentDetail(null);
+                      showProjectDetail(null);
                     }
-                    renderAgentList();
+                    renderProjectList();
                   }
                 }
               }
@@ -944,11 +944,11 @@ async function sendMessage() {
               content.textContent = finalAnswer;
             }
             receivedAnswer = receivedAnswer || finalAnswer.length > 0;
-            updateAgentActivity(activeAgentId, 'Drakyn', finalAnswer);
+            updateProjectActivity(activeProjectId, 'Drakyn', finalAnswer);
           } else if (data.type === 'error') {
             const errorMessage = data.error == null ? 'Unknown error' : data.error;
             content.innerHTML = `<strong style="color: #dc3545;">Error:</strong> ${escapeHtml(errorMessage)}`;
-            updateAgentActivity(activeAgentId, 'Drakyn', `Error: ${errorMessage}`);
+            updateProjectActivity(activeProjectId, 'Drakyn', `Error: ${errorMessage}`);
           } else if (data.type === 'done') {
             // Stream complete
             console.log('[Drakyn] Stream complete, final answer:', finalAnswer);
@@ -964,13 +964,13 @@ async function sendMessage() {
     if (!receivedAnswer && sawThinkingUpdate) {
       console.warn('[Drakyn] Stream ended but no final answer received');
       agentMessageDiv.innerHTML = `<strong style="color: #dc3545;">Error:</strong> Drakyn did not provide a response. Check server logs for details.`;
-      updateAgentActivity(activeAgentId, 'Drakyn', 'No response produced — check server logs for details.');
+      updateProjectActivity(activeProjectId, 'Drakyn', 'No response produced — check server logs for details.');
     }
 
   } catch (error) {
     const errorMessage = error && error.message ? error.message : 'Unknown error';
     agentMessageDiv.innerHTML = `<strong style="color: #dc3545;">Connection error:</strong> ${escapeHtml(errorMessage)}. Make sure a model is loaded.`;
-    updateAgentActivity(activeAgentId, 'Drakyn', `Connection error: ${errorMessage}`);
+    updateProjectActivity(activeProjectId, 'Drakyn', `Connection error: ${errorMessage}`);
   } finally {
     // Re-enable input
     messageInput.disabled = false;
@@ -1493,7 +1493,7 @@ function createRecipeCard(recipe, isUserRecipe) {
     'research': '#dcdcaa',
     'development': '#569cd6',
     'writing': '#c586c0',
-    'agent-management': '#9cdcfe'
+    'project-management': '#9cdcfe'
   };
 
   const categoryColor = categoryColors[recipe.category] || '#858585';
@@ -1585,7 +1585,7 @@ function showCreateRecipeModal() {
   const prompt = prompt('Recipe Prompt (the instructions for the agent):');
   if (!prompt) return;
 
-  const category = prompt('Category (productivity/email/research/development/writing/agent-management):') || 'productivity';
+  const category = prompt('Category (productivity/email/research/development/writing/project-management):') || 'productivity';
   const icon = prompt('Icon (emoji):') || '📝';
   const tagsInput = prompt('Tags (comma-separated):') || '';
   const tags = tagsInput.split(',').map(t => t.trim()).filter(t => t);
@@ -1636,8 +1636,8 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       if (page === 'projects') {
-        renderAgentList();
-        showAgentDetail(getAgentById(activeAgentId));
+        renderProjectList();
+        showProjectDetail(getProjectById(activeProjectId));
       }
 
       if (page === 'recipes') {
@@ -1651,7 +1651,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  initializeAgentWorkspace();
+  initializeProjectWorkspace();
 
   const loadModelBtn = document.getElementById('load-model-btn');
   if (loadModelBtn) {
@@ -1680,7 +1680,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const analyzeStatusBtn = document.getElementById('analyze-status-btn');
   if (analyzeStatusBtn) {
-    analyzeStatusBtn.addEventListener('click', analyzeAgentStatus);
+    analyzeStatusBtn.addEventListener('click', analyzeProjectStatus);
   }
 
   // Recipe tabs
@@ -2016,7 +2016,7 @@ async function sendProactiveGreeting() {
 
     // Add as agent message
     addMessage(greeting, false);
-    updateAgentActivity(activeAgentId, 'Drakyn', greeting);
+    updateProjectActivity(activeProjectId, 'Drakyn', greeting);
 
     // Set next check time (30 minutes from now)
     agentStatusData.nextCheckTime = Date.now() + agentStatusData.checkInterval;
@@ -2030,7 +2030,7 @@ async function sendProactiveGreeting() {
     // Simple fallback greeting
     const fallback = 'Hello! I\'m here and ready to help. What can I do for you today?';
     addMessage(fallback, false);
-    updateAgentActivity(activeAgentId, 'Drakyn', fallback);
+    updateProjectActivity(activeProjectId, 'Drakyn', fallback);
     sessionStorage.setItem('greeted', 'true');
   }
 }
