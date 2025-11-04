@@ -56,7 +56,7 @@ class AgentTool:
 
         if not AgentTool.AGENTS_FILE.exists():
             initial_data = {
-                "projects": [],
+                "agents": [],
                 "active_agent_id": None,
                 "last_updated": datetime.now().isoformat()
             }
@@ -70,7 +70,7 @@ class AgentTool:
             return json.loads(AgentTool.AGENTS_FILE.read_text())
         except (json.JSONDecodeError, FileNotFoundError):
             return {
-                "projects": [],
+                "agents": [],
                 "active_agent_id": None,
                 "last_updated": datetime.now().isoformat()
             }
@@ -86,7 +86,7 @@ class AgentTool:
     def _generate_agent_id() -> str:
         """Generate a unique agent ID"""
         import uuid
-        return f"project-{uuid.uuid4().hex[:8]}"
+        return f"agent-{uuid.uuid4().hex[:8]}"
 
     @staticmethod
     def get_schema() -> Dict[str, Any]:
@@ -206,7 +206,7 @@ class AgentTool:
             }
 
             # Add to agents list
-            data["projects"].append(project)
+            data["agents"].append(agent)
 
             # Set as active agent
             data["active_agent_id"] = agent["id"]
@@ -218,7 +218,7 @@ class AgentTool:
                 "action": "create",
                 "success": True,
                 "agent": agent,
-                "message": f"Created agent '{project['name']}' and set it as active.",
+                "message": f"Created agent '{agent['name']}' and set it as active.",
                 "ui_action": {
                     "type": "create_agent",
                     "agent": agent
@@ -240,9 +240,9 @@ class AgentTool:
             return {
                 "action": "list",
                 "success": True,
-                "projects": data["projects"],
+                "agents": data["agents"],
                 "active_agent_id": data.get("active_agent_id"),
-                "count": len(data["projects"])
+                "count": len(data["agents"])
             }
 
         except Exception as e:
@@ -265,7 +265,7 @@ class AgentTool:
 
             # Find agent
             agent = None
-            for p in data["projects"]:
+            for p in data["agents"]:
                 if p["id"] == args.agent_id:
                     agent = p
                     break
@@ -295,7 +295,7 @@ class AgentTool:
                 "action": "update",
                 "success": True,
                 "agent": agent,
-                "message": f"Updated agent '{project['name']}'",
+                "message": f"Updated agent '{agent['name']}'",
                 "ui_action": {
                     "type": "update_agent",
                     "agent": agent
@@ -321,7 +321,7 @@ class AgentTool:
             data = AgentTool._load_projects()
 
             # Verify agent exists
-            agent_exists = any(p["id"] == agent_id for p in data["projects"])
+            agent_exists = any(p["id"] == agent_id for p in data["agents"])
 
             if not agent_exists:
                 return {
@@ -371,7 +371,7 @@ class AgentTool:
 
             # Find agent
             agent = None
-            for p in data["projects"]:
+            for p in data["agents"]:
                 if p["id"] == args.agent_id:
                     agent = p
                     break
@@ -397,7 +397,7 @@ class AgentTool:
                 "action": "analyze_status",
                 "success": True,
                 "agent": agent,
-                "message": f"Updated status analysis for '{project['name']}'",
+                "message": f"Updated status analysis for '{agent['name']}'",
                 "ui_action": {
                     "type": "update_agent",
                     "agent": agent
@@ -424,7 +424,7 @@ class AgentTool:
 
             # Find agent to delete
             agent_to_delete = None
-            for p in data["projects"]:
+            for p in data["agents"]:
                 if p["id"] == agent_id:
                     agent_to_delete = p
                     break
@@ -436,12 +436,12 @@ class AgentTool:
                 }
 
             # Remove agent from list
-            data["projects"] = [p for p in data["projects"] if p["id"] != agent_id]
+            data["agents"] = [p for p in data["agents"] if p["id"] != agent_id]
 
             # If this was the active agent, clear active_agent_id or set to another agent
             if data.get("active_agent_id") == agent_id:
                 # Set to first remaining agent or None
-                data["active_agent_id"] = data["projects"][0]["id"] if data["projects"] else None
+                data["active_agent_id"] = data["agents"][0]["id"] if data["agents"] else None
 
             # Save changes
             AgentTool._save_projects(data)

@@ -121,7 +121,8 @@ def load(model_name: str, gpu_memory: float, tensor_parallel: int):
 
 
 @cli.command()
-def agents():
+@click.option('--debug', is_flag=True, help='Show debug information')
+def agents(debug):
     """List all agents"""
     try:
         # Call the MCP server to list agents
@@ -134,6 +135,10 @@ def agents():
             timeout=5
         )
         data = response.json()
+
+        # Debug: print response
+        if debug:
+            click.echo(f"Debug response: {json.dumps(data, indent=2)}")
 
         if 'result' in data and 'agents' in data['result']:
             agents_list = data['result']['agents']
