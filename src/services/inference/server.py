@@ -626,22 +626,21 @@ async def startup_event():
     # Determine which model to load
     model_to_load = CURRENT_MODEL or DEFAULT_MODEL
 
-    if AUTO_LOAD_MODEL:
-        if INFERENCE_ENGINE == "vllm":
-            logger.info(f"Auto-loading model: {model_to_load}")
-            try:
-                # Load model in background to not block server startup
-                await load_default_model()
-            except Exception as e:
-                logger.error(f"Failed to auto-load model: {e}")
-                logger.info("Server will continue without a loaded model")
-        elif INFERENCE_ENGINE == "openai_compatible":
-            # For openai_compatible mode, restore the saved model name
-            if CURRENT_MODEL:
-                current_model = CURRENT_MODEL
-                logger.info(f"Restored model selection: {current_model}")
-            logger.info(f"Using OpenAI-compatible server at {OPENAI_COMPATIBLE_URL}")
-            logger.info("Models are managed by the external server")
+    if INFERENCE_ENGINE == "openai_compatible":
+        # For openai_compatible mode, always restore the saved model name
+        if CURRENT_MODEL:
+            current_model = CURRENT_MODEL
+            logger.info(f"Restored model selection: {current_model}")
+        logger.info(f"Using OpenAI-compatible server at {OPENAI_COMPATIBLE_URL}")
+        logger.info("Models are managed by the external server")
+    elif AUTO_LOAD_MODEL and INFERENCE_ENGINE == "vllm":
+        logger.info(f"Auto-loading model: {model_to_load}")
+        try:
+            # Load model in background to not block server startup
+            await load_default_model()
+        except Exception as e:
+            logger.error(f"Failed to auto-load model: {e}")
+            logger.info("Server will continue without a loaded model")
 
     startup_complete = True
     logger.info(f"Server startup complete (engine: {INFERENCE_ENGINE}, model: {current_model or 'None'})")
