@@ -121,6 +121,50 @@ def load(model_name: str, gpu_memory: float, tensor_parallel: int):
 
 
 @cli.command()
+def agents():
+    """List all agents"""
+    try:
+        # Call the MCP server to list agents
+        response = requests.post(
+            "http://127.0.0.1:8001/execute",
+            json={
+                "tool": "agent_manager",
+                "arguments": {"action": "list"}
+            },
+            timeout=5
+        )
+        data = response.json()
+
+        if 'result' in data and 'agents' in data['result']:
+            agents_list = data['result']['agents']
+            active_id = data['result'].get('active_agent_id')
+
+            if not agents_list:
+                click.echo(click.style("No agents found", dim=True))
+            else:
+                click.echo(click.style(f"\nAgents ({len(agents_list)}):", fg="cyan", bold=True))
+                for agent in agents_list:
+                    is_active = agent['id'] == active_id
+                    prefix = "→ " if is_active else "  "
+                    name_style = "green" if is_active else "white"
+
+                    click.echo(f"{prefix}{click.style(agent['name'], fg=name_style, bold=is_active)}")
+                    click.echo(f"  Mission: {click.style(agent.get('mission', 'No mission'), dim=True)}")
+                    click.echo(f"  Status: {agent.get('status', 'planning')}")
+                    click.echo(f"  ID: {click.style(agent['id'], dim=True)}")
+                    click.echo()
+        else:
+            click.echo(click.style("Error: Unexpected response format", fg="red"))
+
+    except requests.exceptions.ConnectionError:
+        click.echo(click.style("✗ MCP Server is not running", fg="red"))
+        sys.exit(1)
+    except Exception as e:
+        click.echo(click.style(f"Error: {e}", fg="red"))
+        sys.exit(1)
+
+
+@cli.command()
 @click.option('--stream/--no-stream', default=True, help='Stream the response')
 def chat(stream: bool):
     """Start an interactive chat session with the agent
