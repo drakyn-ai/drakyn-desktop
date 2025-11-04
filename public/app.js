@@ -1199,7 +1199,7 @@ async function checkChatConnection() {
         } else {
           // No model set yet - need to "load" (which just sets the model name)
           indicator.className = 'status-dot warning';
-          text.textContent = 'Ready - Set a model name in Models tab';
+          text.textContent = '⚠️ Select a model in the Models tab to continue';
           messageInput.disabled = true;
           sendButton.disabled = true;
           isConnected = false;
@@ -1226,8 +1226,9 @@ async function checkChatConnection() {
       throw new Error('Server not responding');
     }
   } catch (error) {
+    console.error('Connection check failed:', error);
     indicator.className = 'status-dot disconnected';
-    text.textContent = 'Disconnected - Server starting...';
+    text.textContent = 'Server starting... (this may take a moment)';
     messageInput.disabled = true;
     sendButton.disabled = true;
     isConnected = false;
